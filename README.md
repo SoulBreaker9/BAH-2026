@@ -3,5 +3,5 @@
 ## Project Description
 Brief description of the project.
 
-## Getting Started
+## Getting Started!
 
