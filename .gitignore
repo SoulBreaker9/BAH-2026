@@ -45,3 +45,21 @@ build/
 # Misc
 *.tsbuildinfo
 *.tsbuildinfo
+
+data/
+
+forMe.txt
+
+work_data/test_aligned_gri.tif
+work_data/test_aligned_mask.tif
+work_data/aligned_ice_mask_L-Band.tif
+work_data/aligned_ice_mask_L.tif
+work_data/raw_ice_mask_L-Band.tif
+work_data/raw_ice_mask_L.tif
+work_data/raw_ice_mask_S.tif
+work_data/aligned_ice_mask_S.tif
+work_data/aligned_hazard_mask.tif
+work_data/raw_hazard_mask.tif
+
+
+.venv/
