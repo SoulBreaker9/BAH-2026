@@ -63,3 +63,5 @@ work_data/raw_hazard_mask.tif
 
 
 .venv/
+
+work_data/test.py
