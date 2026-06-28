@@ -60,8 +60,10 @@ work_data/raw_ice_mask_S.tif
 work_data/aligned_ice_mask_S.tif
 work_data/aligned_hazard_mask.tif
 work_data/raw_hazard_mask.tif
-
+work_data/aligned_hazard_mask.tif.aux.xml
+work_data/aligned_ice_mask_L.tif.aux.xml
 
 .venv/
 
 work_data/test.py
+work_data/output

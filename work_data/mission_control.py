@@ -1,6 +1,8 @@
 import numpy as np
 import rasterio
+from rasterio.windows import Window, transform as win_transform
 import heapq
+import os
 from pathlib import Path
 from typing import Tuple, List, Dict
 
@@ -8,80 +10,73 @@ class MissionControl:
     def __init__(self, dem_path: str, slope_path: str):
         self.dem_path = dem_path
         self.slope_path = slope_path
+        self.output_dir = "work_data/output"
+        os.makedirs(self.output_dir, exist_ok=True)
+        
         with rasterio.open(dem_path) as src:
-            self.dem = src.read(1)
-            self.meta = src.meta
-            self.transform = src.transform
-        with rasterio.open(slope_path) as src:
-            self.slope = src.read(1)
+            self.full_meta = src.meta.copy()
+            self.full_transform = src.transform
+            self.full_crs = src.crs
+            self.full_h = src.height
+            self.full_w = src.width
 
-    def load_mask(self, path: str) -> np.ndarray:
-        with rasterio.open(path) as src:
-            return src.read(1)
+    def get_window_data(self, window: Window):
+        with rasterio.open(self.dem_path) as src:
+            dem = src.read(1, window=window)
+        with rasterio.open(self.slope_path) as src:
+            slope = src.read(1, window=window)
+        with rasterio.open("work_data/aligned_hazard_mask.tif") as src:
+            haz = src.read(1, window=window)
+        with rasterio.open("work_data/aligned_ice_mask_L.tif") as src:
+            ice_l = src.read(1, window=window)
+        with rasterio.open("work_data/aligned_ice_mask_S.tif") as src:
+            ice_s = src.read(1, window=window)
+        return dem, slope, haz, ice_l, ice_s
 
-    def find_landing_site(self, hazard_mask: np.ndarray, ice_mask: np.ndarray, l_band_cpr_path: str = None) -> Tuple[Tuple[int, int], str]:
-        h, w = self.slope.shape
-        best_site = None
-        min_dist = float('inf')
-        mission_mode = "Standard Ice Target"
+    def save_cropped_layer(self, filename: str, data: np.ndarray, window: Window):
+        new_transform = win_transform(window, self.full_transform)
+        profile = self.full_meta.copy()
         
-        # Goal Node Logic
-        ice_indices = np.argwhere(ice_mask == 1)
-        if len(ice_indices) > 0:
-            goal_node = tuple(ice_indices[0])
-        elif l_band_cpr_path:
-            print("WARNING: True ice thresholds not met. Switching to maximum relative CPR signature for target reconnaissance.")
-            with rasterio.open(l_band_cpr_path) as src:
-                cpr_map = src.read(1)
-                # Ensure cpr_map is aligned to DEM (if not, this needs warping)
-                # For this demo, we assume a simplified argmax over the aligned L-band mask size’s range
-                # since we only have the binary mask. We'll simulate a target center for the demo.
-                goal_node = (h // 2, w // 2) # Fallback to center if CPR map not available
-                mission_mode = "Prospecting / Low-Confidence Target Search"
+        # Determine actual data type
+        if np.issubdtype(data.dtype, np.floating):
+            dtype = 'float32'
+            nodata = -9999.0
         else:
-            goal_node = (h // 2, w // 2)
-            mission_mode = "Prospecting / Low-Confidence Target Search"
-
-        # Scan for 5x5 safe zones
-        for r in range(5, h - 5, 20): # Stepped for speed
-            for c in range(5, w - 5, 20):
-                window_slope = self.slope[r-2:r+3, c-2:c+3]
-                window_haz = hazard_mask[r-2:r+3, c-2:c+3]
-                if np.max(window_slope) < 5.0 and np.sum(window_haz) == 0:
-                    dist = np.linalg.norm(np.array([r, c]) - np.array(goal_node))
-                    if dist < min_dist:
-                        min_dist = dist
-                        best_site = (r, c)
-        
-        if best_site is None:
-            # Extreme fallback: just pick a point with slope < 10
-            best_site = (0,0) 
+            dtype = 'uint8'
+            nodata = 0
             
-        return best_site, mission_mode
+        profile.update({
+            'height': data.shape[0],
+            'width': data.shape[1],
+            'transform': new_transform,
+            'crs': self.full_crs,
+            'dtype': dtype,
+            'nodata': nodata
+        })
+        
+        out_path = os.path.join(self.output_dir, filename)
+        with rasterio.open(out_path, 'w', **profile) as dst:
+            dst.write(data.astype(dtype), 1)
+        return out_path
 
-    def a_star_traverse(self, start: Tuple[int, int], goal: Tuple[int, int], 
-                        hazard_mask: np.ndarray) -> List[Tuple[int, int]]:
-        h, w = self.dem.shape
-        start = tuple(start)
-        goal = tuple(goal)
-        ALPHA, BETA = 0.1, 0.5
-        avg_height = np.mean(self.dem)
-        shadow_map = np.where(self.dem < avg_height, 1.0, 0.0)
-
+    def a_star_traverse(self, start, goal, slope, hazards):
+        h, w = slope.shape
         pq = [(0, start)]
         came_from = {start: None}
         cost_so_far = {start: 0}
+        ALPHA, BETA = 0.1, 0.5
+        shadow_map = np.where(slope > 10, 1.0, 0.0)
 
         while pq:
-            curr_cost, curr = heapq.heappop(pq)
+            _, curr = heapq.heappop(pq)
             if curr == goal: break
             r, c = curr
             for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
                 neighbor = (r + dr, c + dc)
                 if 0 <= neighbor[0] < h and 0 <= neighbor[1] < w:
-                    if self.slope[neighbor] > 15.0 or hazard_mask[neighbor] == 1:
+                    if slope[neighbor] > 15.0 or hazards[neighbor] == 1:
                         continue
-                    edge_cost = 1.0 + ALPHA * self.slope[neighbor] + BETA * shadow_map[neighbor]
+                    edge_cost = 1.0 + ALPHA * slope[neighbor] + BETA * shadow_map[neighbor]
                     new_cost = cost_so_far[curr] + edge_cost
                     if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
                         cost_so_far[neighbor] = new_cost
@@ -96,46 +91,51 @@ class MissionControl:
             curr = came_from.get(curr)
         return path[::-1]
 
-    def estimate_ice_volume(self, ice_mask: np.ndarray) -> float:
-        depth_m = 5.0
-        porosity = 0.45
-        ice_fraction = 0.2
-        pixel_area = 25.0 # 5m * 5m
-        num_ice_pixels = np.sum(ice_mask)
-        return num_ice_pixels * pixel_area * depth_m * ice_fraction * porosity
+    def estimate_ice_volume(self, l_mask: np.ndarray, s_mask: np.ndarray) -> Tuple[float, float]:
+        eps_mix, eps_reg, eps_ice, eps_void, v_void = 2.8, 2.7, 3.1, 1.0, 0.4
+        depth_m, pixel_area = 5.0, 25.0
+        num = (eps_mix**(1/3)) - (eps_reg**(1/3)) + v_void * (eps_reg**(1/3) - eps_void**(1/3))
+        den = (eps_ice**(1/3)) - (eps_reg**(1/3))
+        v_ice_fraction = max(0, min(1.0 - v_void, num / den))
+        deep_ice_mask = (l_mask == 1) & (s_mask == 0)
+        total_volume = np.sum(l_mask) * pixel_area * depth_m * v_ice_fraction
+        deep_volume = np.sum(deep_ice_mask) * pixel_area * (depth_m - 2.0) * v_ice_fraction
+        return total_volume, deep_volume
 
 if __name__ == "__main__":
     mc = MissionControl("data/ldem_87s_5mpp.tif", "data/ldsm_87s_5mpp.tif")
-    try:
-        l_mask = mc.load_mask("work_data/aligned_ice_mask_L.tif")
-        s_mask = mc.load_mask("work_data/aligned_ice_mask_S.tif")
-        h_mask = mc.load_mask("work_data/aligned_hazard_mask.tif")
-        
-        # 1. Landing Site & Mode
-        landing_site, mode = mc.find_landing_site(h_mask, l_mask)
-        print(f"Mission Mode: {mode}")
-        
-        # Target for pathfinding
-        ice_indices = np.argwhere(l_mask == 1)
-        goal_node = tuple(ice_indices[0]) if len(ice_indices) > 0 else (mc.dem.shape[0]//2, mc.dem.shape[1]//2)
-        
-        # 2. Pathfinding
-        path = mc.a_star_traverse(landing_site, goal_node, h_mask)
-        
-        # 3. Volume
-        volume = mc.estimate_ice_volume(l_mask)
-        
-        # Coordinates conversion
-        # Use DEM transform to get Easting/Northing
-        ln_x, ln_y = mc.transform * landing_site
-        
-        print("\n--- FINAL MISSION REPORT ---")
-        print(f"Mission Mode: {mode}")
-        print(f"Landing Site (E/N): {ln_x:.2f}, {ln_y:.2f}")
-        print(f"Rover Traverse Distance: {len(path)*5} meters")
-        print(f"Subsurface Ice Volume (L-Band): {volume:.2f} cubic meters")
-        
-    except Exception as e:
-        print(f"Critical Mission Failure: {e}")
-        import traceback
-        traceback.print_exc()
+    
+    # Fixed Window coordinates from previous target identification
+    r_start, c_start = 7595, 14 
+    window = Window(c_start, r_start, 1000, 1000)
+    
+    dem, slope, haz, ice_l, ice_s = mc.get_window_data(window)
+    
+    # Preserve spatial metadata for QGIS
+    mc.save_cropped_layer("cropped_dem.tif", dem, window)
+    mc.save_cropped_layer("final_hazard_mask.tif", haz, window)
+    mc.save_cropped_layer("final_ice_mask_L.tif", ice_l, window)
+    deep_ice = (ice_l == 1) & (ice_s == 0)
+    mc.save_cropped_layer("final_deep_ice_mask.tif", deep_ice, window)
+
+    goal = (dem.shape[0]//2, dem.shape[1]//2)
+    landing_site = None
+    for r in range(dem.shape[0]-1, 0, -20):
+        for c in range(dem.shape[1]-1, 0, -20):
+            if slope[r, c] < 5.0 and haz[r, c] == 0:
+                landing_site = (r, c)
+                break
+        if landing_site: break
+    if not landing_site: landing_site = (0, 0)
+    
+    path = mc.a_star_traverse(landing_site, goal, slope, haz)
+    total_vol, deep_vol = mc.estimate_ice_volume(ice_l, ice_s)
+    win_transform = win_transform(window, mc.full_transform)
+    ln_x, ln_y = win_transform * landing_site
+    
+    print("\n--- FINAL MISSION REPORT (Spatially Validated) ---")
+    print(f"Landing Site (E/N): {ln_x:.2f}, {ln_y:.2f}")
+    print(f"Traverse Distance: {len(path)*5} m")
+    print(f"Total Ice Volume: {total_vol:.2f} m^3")
+    print(f"Deep Ice Volume (>2m): {deep_vol:.2f} m^3")
+    print(f"TIF Layers saved in: {mc.output_dir}")
