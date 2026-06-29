@@ -16,9 +16,9 @@
 
 ```
 ╔═══════════════════════════════════════════════════════════════════╗
-║    PROJECT DEEP ICE — ISRO BAH-2026 PS-8 HACKATHON SOLUTION     ║
-║    Chandrayaan-2 Subsurface Ice Detection + Rover Pathfinding    ║
-║    Lunar South Pole · Faustini PSR · Doubly Shadowed Craters     ║
+║    PROJECT DEEP ICE — ISRO BAH-2026 PS-8 HACKATHON SOLUTION       ║
+║    Chandrayaan-2 Subsurface Ice Detection + Rover Pathfinding     ║
+║    Lunar South Pole · Faustini PSR · Doubly Shadowed Craters      ║
 ╚═══════════════════════════════════════════════════════════════════╝
 ```
 
