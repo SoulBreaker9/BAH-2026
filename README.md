@@ -8,27 +8,56 @@
        D  E  E  P     I  C  E     —     B  A  H  -  2  0  2  6
 -->
 
+<div align="center">
+
+# 🌑 PROJECT DEEP ICE
+
+**ISRO BAH-2026 PS-8 Hackathon Solution**
+*Chandrayaan-2 Subsurface Ice Detection + Rover Pathfinding • Lunar South Pole • Faustini PSR • Doubly Shadowed Craters*
+
+![Mission Active](https://img.shields.io/badge/MISSION-ACTIVE-brightgreen?style=for-the-badge)
+![ISRO](https://img.shields.io/badge/ISRO-CHANDRAYAAN--2_DFSAR-E05A00?style=for-the-badge)
+![Python](https://img.shields.io/badge/PYTHON-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![QGIS](https://img.shields.io/badge/QGIS-3.28+_LTR-589632?style=for-the-badge&logo=qgis&logoColor=white)
+![License](https://img.shields.io/badge/LICENSE-MIT-F1C40F?style=for-the-badge)
+
+<br>
+
+### Autonomous Subsurface Water-Ice Prospecting and Rover Traverse Planning in Lunar South Polar Permanently Shadowed Regions Using Chandrayaan-2 DFSAR Polarimetry
+
+</div>
+
+---
+
+A multi-sensor fusion pipeline that detects buried water ice in doubly-shadowed craters at the Lunar South Pole, quantifies ice volume via the Looyenga dielectric mixing model, and computes cost-weighted A* rover traverses over hazard-classified LOLA terrain — generating QGIS-ready 3D GeoTIFF layers in `ESRI:103878` (Moon 2000 South Pole Stereographic).
+
+<!--
+```
+                                  ╔═══════════════════════════════════════════════════════════════════╗
+                                  ║    PROJECT DEEP ICE — ISRO BAH-2026 PS-8 HACKATHON SOLUTION       ║
+                                  ║    Chandrayaan-2 Subsurface Ice Detection + Rover Pathfinding     ║
+                                  ║    Lunar South Pole · Faustini PSR · Doubly Shadowed Craters      ║
+                                  ╚═══════════════════════════════════════════════════════════════════╝
+```
+
 ![Mission Status](https://img.shields.io/badge/Mission-ACTIVE-brightgreen?style=for-the-badge)
 ![Chandrayaan-2](https://img.shields.io/badge/ISRO-Chandrayaan--2_DFSAR-orange?style=for-the-badge&logo=satellite)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)
 ![QGIS](https://img.shields.io/badge/QGIS-3.28+_LTR-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
-```
-╔═══════════════════════════════════════════════════════════════════╗
-║    PROJECT DEEP ICE — ISRO BAH-2026 PS-8 HACKATHON SOLUTION       ║
-║    Chandrayaan-2 Subsurface Ice Detection + Rover Pathfinding     ║
-║    Lunar South Pole · Faustini PSR · Doubly Shadowed Craters      ║
-╚═══════════════════════════════════════════════════════════════════╝
-```
+
 
 ---
 
-# Project Deep Ice: Autonomous Subsurface Water-Ice Prospecting and Rover Traverse Planning in Lunar South Polar Permanently Shadowed Regions Using Chandrayaan-2 DFSAR Polarimetry
+# PROJECT DEEP ICE
+## Autonomous Subsurface Water-Ice Prospecting and Rover Traverse Planning in Lunar South Polar Permanently Shadowed Regions Using Chandrayaan-2 DFSAR Polarimetry
 
 **A multi-sensor fusion pipeline that detects buried water ice in doubly-shadowed craters at the Lunar South Pole, quantifies ice volume via the Looyenga dielectric mixing model, and computes cost-weighted A\* rover traverses over hazard-classified LOLA terrain — generating QGIS-ready 3D GeoTIFF layers in `ESRI:103878` (Moon 2000 South Pole Stereographic).**
 
 ---
+-->
+
 
 ## Executive Abstract
 
@@ -811,27 +840,27 @@ Saves `mission_traverse_map.png` to the project root.
 9. **Carrier, W. D., Olhoeft, G. R., & Mendell, W.** (1991). "Physical Properties of the Lunar Surface." *Lunar Sourcebook*, 475–594. Cambridge University Press.
 
 ---
-
-## Team & Contributors
+<!--## Team & Contributors
 
 | Name | Role | Responsibilities | Key Deliverables |
 |---|---|---|---|
 | **Parshva Shah** | Team Leader — Data Science & Geospatial Architecture | Full pipeline orchestration, array thresholding, float32 scrubbing, CRS injection, QGIS 3D extrusion, dynamic windowing, final output validation | `generate_qgis_layers.py`, `mission_control.py`, all `work_data/output/` GeoTIFFs, QGIS 3D visualizations |
 | **Kripa Shah** | R&D — Scientific Literature & Physical Parameters | Scientific literature review (Sinha et al., Looyenga, Nozette), mission constraint identification, dielectric constant sourcing from Apollo measurements, CPR/DOP threshold validation | Physics whitepaper, parameter validation, scientific rigor review |
 | **Shivam Patel** | Full Stack Developer — Software Architecture | Modular codebase architecture (`src/ml`, `src/pipeline`, `src/shared`), `co_registration.py` engine, `optical_hazard.py` PDS4 reader, system integration | `radar_io.py`, `co_registration.py`, `optical_hazard.py`, `data_audit.py` |
-| **Saud Topiwala** | Optimization & Novelty Research | A\* algorithmic efficiency, cost function design (α/β weight tuning), computational optimization (dynamic windowing to reduce RAM from 16 GB to < 100 MB), novel pathfinding heuristics | A\* implementation in `mission_control.py`, RAM optimization strategy, cost matrix design |
+| **Saud Topiwala** | Optimization & Novelty Research | A\* algorithmic efficiency, cost function design (α/β weight tuning), computational optimization (dynamic windowing to reduce RAM from 16 GB to < 100 MB), novel pathfinding heuristics | A\* implementation in `mission_control.py`, RAM optimization strategy, cost matrix design | -->
 
-### Detailed Contributions
 
-**Parshva Shah** designed and executed the end-to-end geospatial pipeline — from raw PRADAN downloads through final QGIS-ready GeoTIFF output. He identified and fixed the critical Float32 overflow bug, the CRS Earth-vs-Moon mismatch, and the void-space window coordinate error. His `generate_qgis_layers.py` script implements the multi-strategy ice detection fallback (CPR/DOP → relaxed DOP → PSR proxy) and produces all 5 validated output layers with explicit `ESRI:103878` CRS injection. He built the QGIS 3D visualizations that serve as the project's presentation "money shot."
+<div align="center">
+## Team GJP (Gujarat Janta Party)
 
-**Kripa Shah** conducted the scientific foundation work — identifying the Sinha et al. (2024) paper as the methodological anchor, sourcing dielectric constants from Apollo sample literature, and validating the CPR > 1.0 / DOP < 0.13 thresholds against published planetary radar physics. Her research defined the physical parameters that drive every computation in the pipeline.
+| Name | Role | LinkedIn |
+|------|------|----------|
+| Parshva Shah | Geospatial Pipeline & Data Engineering Lead | [LinkedIn](https://www.linkedin.com/in/parshva-shah-0473b3319/) |
+| Kripa Shah | Planetary Science Research & Validation (R&D) | [LinkedIn](https://www.linkedin.com/in/kripa-shah-893499319/) |
+| Shivam Patel | Full Stack Developer | [LinkedIn](https://www.linkedin.com/in/shivamcp/) |
+| Saud Topiwala | Algorithm Design & Computational Optimization (R&D) | [LinkedIn](https://www.linkedin.com/in/saud-topiwala-277995312/) |
 
-**Shivam Patel** architected the modular codebase structure, separating concerns into `ml/` (physics engines), `pipeline/` (orchestration), and `shared/` (cross-cutting utilities). He built the `RadarDataLoader` that handles ISRO's fragmented PDS4 directory structure, the `CoRegistrationEngine` that aligns all datasets to the LOLA DEM grid, and the `OpticalHazardEngine` that processes raw PDS4 OHRC imagery through morphological top-hat filtering and adaptive thresholding.
-
-**Saud Topiwala** designed the A\* cost function with dual-objective optimization (minimize hazard traversal + maximize ice proximity), tuned the α and β weight parameters, and implemented the dynamic windowing strategy that reduced the computational footprint from 1.6 billion pixels (~16 GB RAM) to 1 million pixels (~100 MB RAM), enabling real-time pathfinding on consumer hardware.
-
----
+</div>
 
 ## License
 
