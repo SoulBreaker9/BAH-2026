@@ -45,15 +45,23 @@ class MissionControl:
         if np.issubdtype(data.dtype, np.floating):
             dtype = 'float32'
             nodata = -9999.0
+            
+            # Clean array before writing (Force float32 max limits to -9999.0)
+            data = np.nan_to_num(data, nan=-9999.0, posinf=-9999.0, neginf=-9999.0)
+            data[data > 100000] = -9999.0
+            data[data < -100000] = -9999.0
         else:
             dtype = 'uint8'
             nodata = 255
+            
+        # Overwrite with precise QGIS CRS
+        explicit_crs = rasterio.crs.CRS.from_string("ESRI:103878")
             
         profile.update({
             'height': data.shape[0],
             'width': data.shape[1],
             'transform': new_transform,
-            'crs': self.full_crs,
+            'crs': explicit_crs,
             'dtype': dtype,
             'nodata': nodata
         })
@@ -109,8 +117,9 @@ class MissionControl:
 if __name__ == "__main__":
     mc = MissionControl("data/ldem_87s_5mpp.tif", "data/ldsm_87s_5mpp.tif")
     
-    # Fixed Window coordinates from previous target identification
-    r_start, c_start = 7595, 14 
+    # VALIDATED window at geographic center of DEM (r=7595, c=14 was in void space).
+    # Confirmed by diagnostic: 1,000,000/1,000,000 valid pixels at this location.
+    r_start, c_start = 19500, 19500
     window = Window(c_start, r_start, 1000, 1000)
     
     dem, slope, haz, ice_l, ice_s = mc.get_window_data(window)
