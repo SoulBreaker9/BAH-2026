@@ -65,7 +65,7 @@ if __name__ == "__main__":
             print("Source GRI file not found for test.")
         else:
             actual_src = str(matches[0])
-            out_file = "work_data/test_aligned_gri.tif"
+            out_file = "work_data/interim/test_aligned_gri.tif"
             
             engine = CoRegistrationEngine(ref_file)
             # Testing as continuous data
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             print(f"SUCCESS: Aligned {actual_src} to DEM using Bilinear resampling.")
             
             # Testing as mask
-            out_mask_file = "work_data/test_aligned_mask.tif"
+            out_mask_file = "work_data/interim/test_aligned_mask.tif"
             engine.align_to_reference(actual_src, out_mask_file, is_mask=True)
             print(f"SUCCESS: Aligned {actual_src} to DEM using Nearest Neighbor resampling.")
 

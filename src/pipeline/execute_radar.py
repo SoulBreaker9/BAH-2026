@@ -1,9 +1,13 @@
 import numpy as np
 from pathlib import Path
 import rasterio
-from ml.radar_io import RadarDataLoader
-from ml.polarimetry import detect_ice
-from shared.co_registration import CoRegistrationEngine
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from src.ml.radar_io import RadarDataLoader
+from src.ml.polarimetry import detect_ice
+from src.shared.co_registration import CoRegistrationEngine
 
 def run_radar_pipeline(product_id: str, label: str, date_str: str):
     print(f"Processing {label} (Target Date: {date_str})...")
@@ -21,12 +25,14 @@ def run_radar_pipeline(product_id: str, label: str, date_str: str):
     S = loader.get_scattering_matrix(stack)
     ice_mask = detect_ice(S, window_size=5)
     
-    raw_mask_path = f"work_data/raw_ice_mask_{label}.tif"
-    with rasterio.open(raw_mask_path, 'w', **stack['meta']) as dst:
+    raw_mask_path = f"work_data/interim/raw_ice_mask_{label}.tif"
+    meta = stack['meta'].copy()
+    meta.update(dtype=rasterio.uint8, nodata=255, count=1)
+    with rasterio.open(raw_mask_path, 'w', **meta) as dst:
         dst.write(ice_mask.astype(rasterio.uint8), 1)
     
     engine = CoRegistrationEngine("data/ldem_87s_5mpp.tif")
-    output_path = f"work_data/aligned_ice_mask_{label}.tif"
+    output_path = f"work_data/interim/aligned_ice_mask_{label}.tif"
     engine.align_to_reference(raw_mask_path, output_path, is_mask=True)
     
     print(f"SUCCESS: Aligned mask saved to {output_path}")

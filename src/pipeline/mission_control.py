@@ -25,11 +25,11 @@ class MissionControl:
             dem = src.read(1, window=window)
         with rasterio.open(self.slope_path) as src:
             slope = src.read(1, window=window)
-        with rasterio.open("work_data/aligned_hazard_mask.tif") as src:
+        with rasterio.open("work_data/interim/aligned_hazard_mask.tif") as src:
             haz = src.read(1, window=window)
-        with rasterio.open("work_data/aligned_ice_mask_L.tif") as src:
+        with rasterio.open("work_data/interim/aligned_ice_mask_L.tif") as src:
             ice_l = src.read(1, window=window)
-        with rasterio.open("work_data/aligned_ice_mask_S.tif") as src:
+        with rasterio.open("work_data/interim/aligned_ice_mask_S.tif") as src:
             ice_s = src.read(1, window=window)
         return dem, slope, haz, ice_l, ice_s
 
@@ -37,13 +37,17 @@ class MissionControl:
         new_transform = win_transform(window, self.full_transform)
         profile = self.full_meta.copy()
         
+        # Safely handle booleans by explicitly casting to uint8 early
+        if data.dtype == bool:
+            data = data.astype(np.uint8)
+            
         # Determine actual data type
         if np.issubdtype(data.dtype, np.floating):
             dtype = 'float32'
             nodata = -9999.0
         else:
             dtype = 'uint8'
-            nodata = 0
+            nodata = 255
             
         profile.update({
             'height': data.shape[0],

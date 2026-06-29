@@ -4,7 +4,11 @@ import rasterio
 from rasterio.transform import from_bounds
 from pathlib import Path
 from typing import Tuple
-from shared.co_registration import CoRegistrationEngine
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from src.shared.co_registration import CoRegistrationEngine
 import pds4_tools
 
 class OpticalHazardEngine:
@@ -53,11 +57,11 @@ class OpticalHazardEngine:
         transform = from_bounds(west, south, east, north, w, h)
         
         mask = self.process_hazards(img)
-        raw_mask_path = "work_data/raw_hazard_mask.tif"
+        raw_mask_path = "work_data/interim/raw_hazard_mask.tif"
         with rasterio.open(
             raw_mask_path, 'w', 
             driver='GTiff', height=h, width=w, 
-            count=1, dtype=rasterio.uint8, 
+            count=1, dtype=rasterio.uint8, nodata=255,
             crs=lunar_crs, transform=transform
         ) as dst:
             dst.write(mask, 1)
@@ -68,7 +72,7 @@ class OpticalHazardEngine:
 if __name__ == "__main__":
     ohrc_file = "data/ch2_ohr_ncp_20241122T2230467113_d_img_d18/data/calibrated/20241122/ch2_ohr_ncp_20241122T2230467113_d_img_d18.img"
     ref_dem = "data/ldem_87s_5mpp.tif"
-    out_map = "work_data/aligned_hazard_mask.tif"
+    out_map = "work_data/interim/aligned_hazard_mask.tif"
     try:
         engine = OpticalHazardEngine(ref_dem)
         engine.generate_aligned_hazard_map(ohrc_file, out_map)
