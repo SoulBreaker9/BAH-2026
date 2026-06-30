@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BAH 2026 — Team</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { background: #020409; overflow-y: auto; cursor: none; }
+    #team { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .nav-links a.active { color: #00FF88; border-bottom: 1px solid #00FF88; }
+  </style>
+</head>
+<body>
+  <!-- NAVIGATION -->
+  <nav>
+    <div class="nav-logo">BAH <b>2026</b></div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="index.html#mission">Mission</a></li>
+      <li><a href="index.html#radar-sec">Radar</a></li>
+      <li><a href="index.html#lunar-map">Map</a></li>
+      <li><a href="team.html" class="active" style="color: #00FF88;">Team</a></li>
+    </ul>
+    <button class="nav-btn" onclick="window.location.href='index.html'">Back to Mission</button>
+  </nav>
+
+  <!-- TEAM SECTION -->
+  <section class="sec visible" id="team">
+    <div class="sec-label" style="justify-content:center">Mission Crew</div>
+    <h2 class="sec-h2" style="text-align:center">The <em>Team</em></h2>
+    
+    <div class="team-grid">
+      <div class="t-card visible" style="opacity:1; transform:none; transition-delay:0s;">
+        <div class="t-av">👨‍🚀</div>
+        <div class="t-name">MEMBER 01</div>
+        <div class="t-role">Team Lead · Radar</div>
+      </div>
+      <div class="t-card visible" style="opacity:1; transform:none; transition-delay:0.15s;">
+        <div class="t-av">👩‍💻</div>
+        <div class="t-name">MEMBER 02</div>
+        <div class="t-role">ML · Ice Detection</div>
+      </div>
+      <div class="t-card visible" style="opacity:1; transform:none; transition-delay:0.3s;">
+        <div class="t-av">🧑‍🔬</div>
+        <div class="t-name">MEMBER 03</div>
+        <div class="t-role">GIS · Terrain Analysis</div>
+      </div>
+      <div class="t-card visible" style="opacity:1; transform:none; transition-delay:0.45s;">
+        <div class="t-av">👨‍🏫</div>
+        <div class="t-name">MEMBER 04</div>
+        <div class="t-role">Pathfinding · Dev</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BACKGROUND EFFECTS -->
+  <div id="scan"></div>
+  <div id="vig"></div>
+
+  <!-- CURSOR -->
+  <div id="cur"></div>
+  <div id="cur-ring"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

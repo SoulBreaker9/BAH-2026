@@ -1,0 +1,14 @@
+numpy
+pandas
+scikit-learn
+xgboost
+networkx
+matplotlib
+scipy
+rasterio
+opencv-python
+scikit-image
+torch
+torchvision
+fastapi
+uvicorn

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BAH 2026 — Radar Polarimetry</title>
+  <meta name="description" content="Bharatiya Antariksh Hackathon 2026 premium showcase. Subsurface lunar ice detection and rover path planning using Chandrayaan-2 DFSAR data.">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="loader">
+    <div class="l-logo">BAH 2026 — INITIALIZING</div>
+    <div class="l-bar-w"><div class="l-bar" id="lbar"></div></div>
+    <div class="l-txt" id="ltxt">BOOTING RADAR SYSTEMS...</div>
+  </div>
+
+  <div id="cur"></div>
+  <div id="cur-ring"></div>
+
+  <canvas id="moonCanvas"></canvas>
+  <div id="scan"></div>
+  <div id="vig"></div>
+
+  <div class="hud hud-tl">
+    <span>BAH-2026 // CHL-08</span>
+    <span>CHANDRAYAAN-2 DFSAR</span>
+    <span class="live">● ACTIVE MISSION</span>
+  </div>
+  <div class="hud hud-tr">
+    <span>LAT: 87.5°S</span>
+    <span>LON: 093.2°E</span>
+    <span>PSR: FAUSTINI</span>
+  </div>
+  <div class="hud hud-bl">
+    <span>CPR &gt; 1.0 // DOP &lt; 0.13</span>
+    <span>ICE DETECTION: ACTIVE</span>
+  </div>
+  <div class="hud hud-br">
+    <span id="mtime">T+00:00:00</span>
+    <span>MISSION ELAPSED</span>
+  </div>
+
+  <nav>
+    <div class="nav-logo">BAH <b>2026</b></div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="radar.html" style="color:var(--isro);">Radar</a></li>
+      <li><a href="fusion.html">Fusion</a></li>
+      <li><a href="terrain.html">Terrain</a></li>
+      <li><a href="rover.html">Rover AI</a></li>
+    </ul>
+    <button class="nav-btn">View Report</button>
+  </nav>
+
+  <div style="padding-top: 120px;"></div>
+
+  <section class="sec split-sec" id="radar-sec">
+    <div class="split-content">
+      <div class="sec-label">Radar Polarimetry</div>
+      <h2 class="sec-h2">CPR / DOP<br/><em>Ice Signatures</em></h2>
+      <p class="c-desc">Using L-band and S-band dual-frequency Synthetic Aperture Radar (DFSAR) data from Chandrayaan-2, we analyze the backscatter signatures to differentiate between rough rocky terrain and volumetric water-ice deposits.</p>
+      
+      <div class="r-stats">
+        <div class="r-metric m-cpr">
+          <div class="r-lbl">CIRCULAR POLARIZATION RATIO (CPR)</div>
+          <div class="r-val">1.24</div>
+          <div class="r-bar"><div class="r-fill" id="rf1"></div></div>
+          <div class="r-tag">ICE DETECTED</div>
+        </div>
+        <div class="r-metric m-dop">
+          <div class="r-lbl">DEGREE OF POLARIZATION (DOP)</div>
+          <div class="r-val">0.09</div>
+          <div class="r-bar"><div class="r-fill" id="rf2"></div></div>
+          <div class="r-tag">CONFIRMED</div>
+        </div>
+        <div class="r-metric m-ice">
+          <div class="r-lbl">ICE PROBABILITY INDEX</div>
+          <div class="r-val">99.4%</div>
+          <div class="r-bar">
+            <div class="r-fill" id="rf3"></div>
+          </div>
+          <div class="r-tag">FUSION CONFIRMED</div>
+          <div style="margin-top: 16px; display: flex; gap: 8px;">
+            <span style="font-size:8px; font-family:var(--font-mono); padding:3px 6px; border:1px solid rgba(0,255,136,.4); color:#00FF88; background:rgba(0,255,136,0.05);">ISRO DFSAR: ✔</span>
+            <span style="font-size:8px; font-family:var(--font-mono); padding:3px 6px; border:1px solid rgba(255,107,53,.4); color:var(--isro); background:rgba(255,107,53,0.05);">IIRS HYDRATION: ✔</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="split-visual">
+      <div class="vis-overlay">
+        <span class="vis-tag v-r">LIVE FEED</span>
+        <span class="vis-tag v-i">FAUSTINI PSR</span>
+      </div>
+      <img src="assets/final_ice_mask_L_1.png" class="vis-canvas" alt="Radar Ice Map" style="object-fit: cover; opacity: 0.9;" />
+    </div>
+  </section>
+
+  <footer>
+    <div class="f-logo">BAH 2026</div>
+    <div class="f-copy">CHALLENGE 08 // CHANDRAYAAN-2 // LUNAR ICE DETECTION</div>
+    <div class="f-isro">ISRO × HACK2SKILL</div>
+  </footer>
+
+  <script src="libs/three.min.js"></script>
+  <script src="libs/OrbitControls.js"></script>
+  <script src="assets/moon_b64.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BAH 2026 — Rover AI Pathfinder</title>
+  <meta name="description" content="Deep Reinforcement Learning A* pathfinding for lunar rover traverse planning. Chandrayaan-2 Challenge 08.">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="loader">
+    <div class="l-logo">BAH 2026 — INITIALIZING</div>
+    <div class="l-bar-w"><div class="l-bar" id="lbar"></div></div>
+    <div class="l-txt" id="ltxt">LOADING ROVER AI...</div>
+  </div>
+
+  <div id="cur"></div>
+  <div id="cur-ring"></div>
+
+  <canvas id="moonCanvas"></canvas>
+  <div id="scan"></div>
+  <div id="vig"></div>
+
+  <div class="hud hud-tl">
+    <span>BAH-2026 // CHL-08</span>
+    <span>A* PATHFINDER</span>
+    <span class="live">● ROVER AI ACTIVE</span>
+  </div>
+  <div class="hud hud-tr">
+    <span>START: LANDING ZONE</span>
+    <span>GOAL: FAUSTINI PSR</span>
+    <span>ALGO: A* + DRL</span>
+  </div>
+  <div class="hud hud-bl">
+    <span>MAX SLOPE &lt; 10° // ENERGY OPTIMIZED</span>
+    <span>PATH: COMPUTING</span>
+  </div>
+  <div class="hud hud-br">
+    <span id="mtime">T+00:00:00</span>
+    <span>MISSION ELAPSED</span>
+  </div>
+
+  <nav>
+    <div class="nav-logo">BAH <b>2026</b></div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="radar.html">Radar</a></li>
+      <li><a href="fusion.html">Fusion</a></li>
+      <li><a href="terrain.html">Terrain</a></li>
+      <li><a href="rover.html" style="color:var(--gold);">Rover AI</a></li>
+    </ul>
+    <button class="nav-btn">View Report</button>
+  </nav>
+
+  <div style="padding-top: 120px;"></div>
+
+  <!-- ALGORITHM SHOWCASE -->
+  <section class="sec split-sec rev" id="algo-sec">
+    <div class="split-visual">
+      <div class="vis-overlay">
+        <span class="vis-tag v-r">LIVE A* ALGORITHM</span>
+      </div>
+      <div class="vis-controls">
+        <button class="vis-btn" id="btn-restart-algo">RESTART PATHFINDER</button>
+      </div>
+      <canvas id="algoC" class="vis-canvas" width="600" height="600"></canvas>
+    </div>
+
+    <div class="split-content">
+      <div class="sec-label">Algorithm Showcase</div>
+      <h2 class="sec-h2">Pathfinder<br/><em>Execution</em></h2>
+      <p class="c-desc">Watch the A* pathfinding algorithm execute in real-time. It explores the terrain grid, evaluates cost functions based on slope hazards (red), and determines the optimal path to the doubly shadowed crater.</p>
+      
+      <ul class="algo-list">
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(0,255,136,.1); border-color:var(--green); color:var(--green)">G</span>
+          <div>
+            <div class="ali-t">G-Cost (Distance Travelled)</div>
+            <div class="ali-d">Exact distance from the illuminated landing site start node, accounting for hazard penalties.</div>
+          </div>
+        </li>
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(79,195,247,.1); border-color:var(--ice); color:var(--ice)">H</span>
+          <div>
+            <div class="ali-t">H-Cost (Manhattan Heuristic)</div>
+            <div class="ali-d">Estimated straight-line distance to the target crater, guiding the search efficiently.</div>
+          </div>
+        </li>
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(255,215,0,.1); border-color:var(--gold); color:var(--gold)">F</span>
+          <div>
+            <div class="ali-t">F-Cost (Total Priority)</div>
+            <div class="ali-d">F = G + H + Hazard Penalty × 10. The node with the lowest F-cost is always explored next.</div>
+          </div>
+        </li>
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(255,107,53,.1); border-color:var(--isro); color:var(--isro)">DRL</span>
+          <div>
+            <div class="ali-t">Deep Reinforcement Learning</div>
+            <div class="ali-d">A Deep Q-Network (DQN) overlay teaches the rover to dynamically balance battery drain vs. slope risk in unknown terrain.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <div class="f-logo">BAH 2026</div>
+    <div class="f-copy">CHALLENGE 08 // CHANDRAYAAN-2 // LUNAR ICE DETECTION</div>
+    <div class="f-isro">ISRO × HACK2SKILL</div>
+  </footer>
+
+  <script src="libs/three.min.js"></script>
+  <script src="libs/OrbitControls.js"></script>
+  <script src="assets/moon_b64.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

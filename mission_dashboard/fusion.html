@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BAH 2026 — Multi-Sensor Fusion</title>
+  <meta name="description" content="Bharatiya Antariksh Hackathon 2026 premium showcase. Subsurface lunar ice detection and rover path planning using Chandrayaan-2 DFSAR data.">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="loader">
+    <div class="l-logo">BAH 2026 — INITIALIZING</div>
+    <div class="l-bar-w"><div class="l-bar" id="lbar"></div></div>
+    <div class="l-txt" id="ltxt">BOOTING FUSION ENGINE...</div>
+  </div>
+
+  <div id="cur"></div>
+  <div id="cur-ring"></div>
+
+  <canvas id="moonCanvas"></canvas>
+  <div id="scan"></div>
+  <div id="vig"></div>
+
+  <div class="hud hud-tl">
+    <span>BAH-2026 // CHL-08</span>
+    <span>CHANDRAYAAN-2 DFSAR</span>
+    <span class="live">● ACTIVE MISSION</span>
+  </div>
+  <div class="hud hud-tr">
+    <span>LAT: 87.5°S</span>
+    <span>LON: 093.2°E</span>
+    <span>PSR: FAUSTINI</span>
+  </div>
+  <div class="hud hud-bl">
+    <span>CPR &gt; 1.0 // DOP &lt; 0.13</span>
+    <span>ICE DETECTION: ACTIVE</span>
+  </div>
+  <div class="hud hud-br">
+    <span id="mtime">T+00:00:00</span>
+    <span>MISSION ELAPSED</span>
+  </div>
+
+  <nav>
+    <div class="nav-logo">BAH <b>2026</b></div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="radar.html">Radar</a></li>
+      <li><a href="fusion.html" style="color:var(--isro);">Fusion</a></li>
+      <li><a href="terrain.html">Terrain</a></li>
+      <li><a href="rover.html">Rover AI</a></li>
+    </ul>
+    <button class="nav-btn">View Report</button>
+  </nav>
+
+  <div style="padding-top: 120px;"></div>
+
+  <section class="sec split-sec" id="fusion-sec">
+    <div class="split-visual">
+      <div class="vis-overlay">
+        <span class="vis-tag v-r">MULTI-SENSOR FUSION</span>
+        <div class="vis-tag">CHANDRAYAAN-2 SUITE</div>
+      </div>
+      <img src="assets/final_ice_mask_L_2.png" class="vis-canvas" alt="Fusion Map" style="object-fit: cover; opacity: 0.9;" />
+    </div>
+
+    <div class="split-content">
+      <div class="sec-label">Cross-Verification Framework</div>
+      <h2 class="sec-h2">ISRO Multi-Payload<br/><em>Fusion</em></h2>
+      <p class="c-desc">High Circular Polarization Ratios (CPR) can often be triggered by rough, rocky terrain (false positives). Instead of relying purely on a single radar band, we utilize the full potential of the Chandrayaan-2 payload suite to mathematically isolate true water-ice.</p>
+      
+      <ul class="algo-list">
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(255,107,53,.1); border-color:var(--isro); color:var(--isro)">L/S-Band</span>
+          <div>
+            <div class="ali-t">DFSAR Depth Correlation</div>
+            <div class="ali-d">Comparing the deep-penetrating L-band with the shallower S-band allows us to estimate the vertical distribution of the ice deposit.</div>
+          </div>
+        </li>
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(255,215,0,.1); border-color:var(--gold); color:var(--gold)">IIRS</span>
+          <div>
+            <div class="ali-t">Water-Molecule Spectra</div>
+            <div class="ali-d">The Imaging Infra-Red Spectrometer scans the 3μm absorption band. Strong dips indicate the presence of OH/H2O molecules.</div>
+          </div>
+        </li>
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(79,195,247,.1); border-color:var(--ice); color:var(--ice)">OHRC</span>
+          <div>
+            <div class="ali-t">PSR Shadow & Albedo</div>
+            <div class="ali-d">The high-resolution camera confirms if the anomalous radar spot is located within a deep, ultra-cold Permanently Shadowed Region (PSR).</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <div class="f-logo">BAH 2026</div>
+    <div class="f-copy">CHALLENGE 08 // CHANDRAYAAN-2 // LUNAR ICE DETECTION</div>
+    <div class="f-isro">ISRO × HACK2SKILL</div>
+  </footer>
+
+  <script src="libs/three.min.js"></script>
+  <script src="libs/OrbitControls.js"></script>
+  <script src="assets/moon_b64.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>

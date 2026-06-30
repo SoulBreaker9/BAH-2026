@@ -1,0 +1,417 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BAH 2026 — Lunar Ice Detection Mission Control</title>
+  <meta name="description" content="Bharatiya Antariksh Hackathon 2026 premium showcase. Subsurface lunar ice detection and rover path planning using Chandrayaan-2 DFSAR data.">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Dashboard Hub Styles ── */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 28px;
+      padding: 0 40px 100px;
+      max-width: 1140px;
+      margin: 0 auto;
+    }
+    @media(max-width: 700px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    /* Animated gradient border wrapper */
+    .dash-card {
+      position: relative;
+      background: rgba(6,13,26,0.7);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 40px 36px 36px;
+      overflow: hidden;
+      text-decoration: none;
+      display: block;
+      transition: transform .45s cubic-bezier(.4,0,.2,1), box-shadow .45s;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .dash-card::before {
+      content: ''; position: absolute; inset: 0; border-radius: 20px;
+      padding: 1px;
+      background: conic-gradient(from var(--angle, 0deg), transparent 40%, var(--card-accent) 50%, transparent 60%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      opacity: 0; transition: opacity .5s;
+      pointer-events: none;
+    }
+    .dash-card:hover::before { opacity: 1; }
+    .dash-card::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 0%, var(--card-glow) 0%, transparent 60%);
+      opacity: 0; transition: opacity .5s; pointer-events: none; border-radius: 20px;
+    }
+    .dash-card:hover::after { opacity: 1; }
+    .dash-card:hover { transform: translateY(-8px); }
+
+    .c-radar { --card-accent: #00FF88; --card-glow: rgba(0,255,136,.08); }
+    .c-radar:hover { box-shadow: 0 12px 60px rgba(0,255,136,.12), 0 0 0 1px rgba(0,255,136,.2); }
+    .c-fusion { --card-accent: #FF6B35; --card-glow: rgba(255,107,53,.08); }
+    .c-fusion:hover { box-shadow: 0 12px 60px rgba(255,107,53,.12), 0 0 0 1px rgba(255,107,53,.2); }
+    .c-terrain { --card-accent: #4FC3F7; --card-glow: rgba(79,195,247,.08); }
+    .c-terrain:hover { box-shadow: 0 12px 60px rgba(79,195,247,.12), 0 0 0 1px rgba(79,195,247,.2); }
+    .c-rover { --card-accent: #FFD700; --card-glow: rgba(255,215,0,.08); }
+    .c-rover:hover { box-shadow: 0 12px 60px rgba(255,215,0,.12), 0 0 0 1px rgba(255,215,0,.2); }
+
+    .dc-num {
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: 3px;
+      opacity: 0.4; margin-bottom: 20px;
+    }
+    .dc-icon {
+      font-size: 40px; margin-bottom: 18px; display: block;
+      filter: drop-shadow(0 0 12px rgba(255,255,255,.15));
+      animation: float 6s ease-in-out infinite;
+    }
+    .c-radar .dc-icon { animation-delay: 0s; }
+    .c-fusion .dc-icon { animation-delay: 1.5s; }
+    .c-terrain .dc-icon { animation-delay: 3s; }
+    .c-rover .dc-icon { animation-delay: 4.5s; }
+    .dc-title {
+      font-family: var(--font-h); font-size: 19px; font-weight: 700;
+      color: #fff; margin-bottom: 12px; letter-spacing: .04em; text-transform: uppercase;
+    }
+    .dc-desc {
+      font-family: var(--font-mono); font-size: 11.5px;
+      color: rgba(255,255,255,.45); line-height: 1.8; margin-bottom: 24px;
+    }
+    .dc-tag {
+      display: inline-block; font-family: var(--font-mono); font-size: 9px;
+      letter-spacing: 2px; padding: 5px 14px; border-radius: 6px;
+      font-weight: 700; text-transform: uppercase;
+    }
+    .c-radar .dc-tag { background: rgba(0,255,136,.08); color: #00FF88; border: 1px solid rgba(0,255,136,.25); }
+    .c-fusion .dc-tag { background: rgba(255,107,53,.08); color: var(--isro); border: 1px solid rgba(255,107,53,.25); }
+    .c-terrain .dc-tag { background: rgba(79,195,247,.08); color: var(--ice); border: 1px solid rgba(79,195,247,.25); }
+    .c-rover .dc-tag { background: rgba(255,215,0,.08); color: var(--gold); border: 1px solid rgba(255,215,0,.25); }
+
+    .dc-arrow {
+      position: absolute; bottom: 32px; right: 32px;
+      font-size: 20px; opacity: 0.2;
+      transition: opacity .4s, transform .4s cubic-bezier(.4,0,.2,1);
+    }
+    .dash-card:hover .dc-arrow { opacity: 1; transform: translate(5px, -5px); }
+
+    .dc-bg {
+      position: absolute; bottom: -25px; right: -5px;
+      font-size: 110px; font-weight: 900; opacity: 0.025;
+      font-family: var(--font-h); user-select: none; line-height: 1;
+      transition: opacity .4s;
+    }
+    .dash-card:hover .dc-bg { opacity: .055; }
+
+    .dc-status {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 22px; padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .dc-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    .c-radar .dc-dot { background: #00FF88; box-shadow: 0 0 8px rgba(0,255,136,.5); }
+    .c-fusion .dc-dot { background: var(--isro); box-shadow: 0 0 8px rgba(255,107,53,.5); }
+    .c-terrain .dc-dot { background: var(--ice); box-shadow: 0 0 8px rgba(79,195,247,.5); }
+    .c-rover .dc-dot { background: var(--gold); box-shadow: 0 0 8px rgba(255,215,0,.5); }
+    .dc-status-txt { font-family: var(--font-mono); font-size: 10px; opacity: 0.45; letter-spacing: .04em; }
+
+    .dash-intro {
+      text-align: center; padding: 80px 40px 56px;
+      max-width: 720px; margin: 0 auto;
+    }
+    .dash-intro .sec-label { margin-bottom: 12px; justify-content: center; }
+    .dash-intro .sec-label::before { display: none; }
+    .dash-intro p {
+      font-family: var(--font-mono); font-size: 12.5px;
+      color: rgba(255,255,255,.4); line-height: 1.9; margin-top: 16px;
+    }
+
+    /* ── Technology Stack Marquee ── */
+    .tech-strip {
+      position: relative; z-index: 5;
+      padding: 28px 0; overflow: hidden;
+      border-top: 1px solid rgba(255,255,255,.03);
+      border-bottom: 1px solid rgba(255,255,255,.03);
+      background: rgba(6,13,26,.4);
+    }
+    .tech-track {
+      display: flex; gap: 48px; align-items: center;
+      animation: marquee 30s linear infinite;
+      width: max-content;
+    }
+    .tech-item {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+      letter-spacing: .15em; text-transform: uppercase; white-space: nowrap;
+      color: rgba(255,255,255,.2); transition: color .3s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tech-item:hover { color: rgba(255,255,255,.6); }
+    .tech-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(0,255,136,.4); }
+    @keyframes marquee { to { transform: translateX(-50%); } }
+  </style>
+</head>
+<body>
+
+  <!-- LOADER -->
+  <div id="loader">
+    <div class="l-logo">BAH 2026 — INITIALIZING</div>
+    <div class="l-bar-w"><div class="l-bar" id="lbar"></div></div>
+    <div class="l-txt" id="ltxt">BOOTING MISSION SYSTEMS...</div>
+  </div>
+
+  <!-- CURSOR -->
+  <div id="cur"></div>
+  <div id="cur-ring"></div>
+
+  <!-- WEBGL BACKGROUND -->
+  <canvas id="moonCanvas"></canvas>
+  <div id="scan"></div>
+  <div id="vig"></div>
+
+  <!-- HUD CORNERS -->
+  <div class="hud hud-tl">
+    <span>BAH-2026 // CHL-08</span>
+    <span>CHANDRAYAAN-2 DFSAR</span>
+    <span class="live">● ACTIVE MISSION</span>
+  </div>
+  <div class="hud hud-tr">
+      <span>A* PATHFINDING</span> • <span>DQN ROVER AGENT</span> • <span>DFSAR</span> • <span>IIRS HYDRATION</span> • <span>OHRC DEM</span> • <span>XGBOOST FUSION</span> • <span>WEBGL</span> • 
+      <span>A* PATHFINDING</span> • <span>DQN ROVER AGENT</span> • <span>DFSAR</span> • <span>IIRS HYDRATION</span> • <span>OHRC DEM</span> • <span>XGBOOST FUSION</span> • <span>WEBGL</span> •  </div>
+  <div class="hud hud-bl">
+    <span>CPR &gt; 1.0 // DOP &lt; 0.13</span>
+    <span>ICE DETECTION: ACTIVE</span>
+  </div>
+  <div class="hud hud-br">
+    <span id="mtime">T+00:00:00</span>
+    <span>MISSION ELAPSED</span>
+  </div>
+
+  <!-- NAVIGATION -->
+  <nav>
+    <div class="nav-logo">BAH <b>2026</b></div>
+    <ul class="nav-links">
+      <li><a href="index.html" style="color:var(--green);">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="radar.html">Radar</a></li>
+      <li><a href="fusion.html">Fusion</a></li>
+      <li><a href="terrain.html">Terrain</a></li>
+      <li><a href="rover.html">Rover AI</a></li>
+    </ul>
+    <button class="nav-btn">View Report</button>
+  </nav>
+
+  <!-- 1. HERO SECTION -->
+  <section id="hero">
+    <div class="eyebrow" id="ey">Bharatiya Antariksh Hackathon 2026</div>
+    <h1 class="hero-h1" id="h1">
+      <span class="l1">LUNAR ICE</span>
+      <span class="l2" data-t="DETECTION">DETECTION</span>
+    </h1>
+    <p class="hero-sub" id="hs">Chandrayaan-2 · Faustini PSR · Doubly Shadowed Craters · Subsurface Characterization</p>
+    
+    <div class="badges" id="ba">
+      <span class="badge b-r">DFSAR Radar</span>
+      <span class="badge b-i">Subsurface Ice</span>
+      <span class="badge b-o">ISRO Challenge</span>
+      <span class="badge b-g">South Polar PSR</span>
+    </div>
+    
+    <div class="cta-row" id="ca">
+      <button class="btn-p" onclick="document.getElementById('mission').scrollIntoView({behavior:'smooth'})">Explore Mission</button>
+    </div>
+    
+    <div class="scroll-hint" id="sh">
+      <div class="scroll-line"></div>
+      <span>SCROLL</span>
+    </div>
+    
+    <div class="stats-bar" id="sb">
+      <div class="stat">
+        <span class="stat-v" data-c="87.5" data-d="1">0</span>
+        <span class="stat-l">Degrees South Latitude</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v" data-c="5" data-d="0">0</span>
+        <span class="stat-l">Metres Subsurface Depth</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v" data-c="1.0" data-d="1">0</span>
+        <span class="stat-l">CPR Ice Threshold</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v" data-c="0.13" data-d="2">0</span>
+        <span class="stat-l">DOP Max Threshold</span>
+      </div>
+      <div class="stat">
+        <span class="stat-v" data-c="99.4" data-d="1">0</span>
+        <span class="stat-l">% Ice Probability (Fused)</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- 2. MISSION DOSSIER -->
+  <section class="sec" id="mission">
+    <div class="sec-label">Mission Overview</div>
+    <h2 class="sec-h2">Challenge 08 —<br/><em>Mapping Ice in the Dark</em></h2>
+    
+    <div class="m-grid">
+      <div class="m-card">
+        <div class="c-num">OBJ // 01</div>
+        <div class="c-title">PSR Ice Mapping</div>
+        <div class="c-desc">Identify and map subsurface ice-bearing regions in permanently shadowed lunar craters, with emphasis on <strong>doubly shadowed craters</strong>, using DFSAR polarimetric radar analysis.</div>
+        <div class="c-bg">01</div>
+      </div>
+      <div class="m-card">
+        <div class="c-num">OBJ // 02</div>
+        <div class="c-title">Radar Polarimetry</div>
+        <div class="c-desc">Distinguish ice-rich regions within doubly shadowed craters from rough, rocky terrains using radar polarimetric signatures. Refined thresholds: CPR &gt; 1.0, DOP &lt; 0.13.</div>
+        <div class="c-bg">02</div>
+      </div>
+      <div class="m-card">
+        <div class="c-num">OBJ // 03</div>
+        <div class="c-title">Safe Landing Site</div>
+        <div class="c-desc">Integrate terrain safety, slope analysis, and solar illumination constraints to propose a scientifically viable and safe landing site near a doubly shadowed crater.</div>
+        <div class="c-bg">03</div>
+      </div>
+      <div class="m-card">
+        <div class="c-num">OBJ // 04</div>
+        <div class="c-title">Rover Path & Ice Volume</div>
+        <div class="c-desc">Design an optimized rover traverse path to the target doubly shadowed crater. Estimate the volume of subsurface ice within the top ~5 meters of lunar regolith.</div>
+        <div class="c-bg">04</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- 3. TOOL NAVIGATION HUB -->
+  <section class="sec" id="tools">
+    <div class="dash-intro">
+      <div class="sec-label">Solution Modules</div>
+      <h2 class="sec-h2">Select a<br/><em>Mission Tool</em></h2>
+      <p>Each module below is a dedicated AI/ML analysis tool. Select one to explore the full interactive dashboard, live canvas animations, and the scientific methodology behind it.</p>
+    </div>
+
+    <div class="dash-grid">
+
+      <!-- RADAR -->
+      <a class="dash-card c-radar" href="radar.html">
+        <div class="dc-num">MODULE // 01</div>
+        <span class="dc-icon">📡</span>
+        <div class="dc-title">Polarimetric Ice Detection</div>
+        <div class="dc-desc">Live DFSAR radar polar chart. CPR & DOP threshold analysis. Real-time Faustini PSR scan sweep.</div>
+        <span class="dc-tag">RADAR POLARIMETRY</span>
+        <div class="dc-status">
+          <div class="dc-dot"></div>
+          <span class="dc-status-txt">DFSAR LIVE FEED · CPR: 1.24 · DOP: 0.09</span>
+        </div>
+        <div class="dc-arrow">↗</div>
+        <div class="dc-bg">01</div>
+      </a>
+
+      <!-- FUSION -->
+      <a class="dash-card c-fusion" href="fusion.html">
+        <div class="dc-num">MODULE // 02</div>
+        <span class="dc-icon">🛰️</span>
+        <div class="dc-title">Multi-Payload Fusion</div>
+        <div class="dc-desc">ISRO DFSAR L-band & S-band × IIRS Hydration × OHRC Shadow mapping. Live data fusion animation.</div>
+        <span class="dc-tag">SENSOR FUSION</span>
+        <div class="dc-status">
+          <div class="dc-dot"></div>
+          <span class="dc-status-txt">ICE PROBABILITY: 99.4% · FUSION CONFIRMED</span>
+        </div>
+        <div class="dc-arrow">↗</div>
+        <div class="dc-bg">02</div>
+      </a>
+
+      <!-- TERRAIN -->
+      <a class="dash-card c-terrain" href="terrain.html">
+        <div class="dc-num">MODULE // 03</div>
+        <span class="dc-icon">🌑</span>
+        <div class="dc-title">Terrain & Subsurface Analysis</div>
+        <div class="dc-desc">OHRC DEM hazard heatmap. Sobel gradient slope detection. Subsurface ice volume quantification via dielectric inversion.</div>
+        <span class="dc-tag">TERRAIN ANALYSIS</span>
+        <div class="dc-status">
+          <div class="dc-dot"></div>
+          <span class="dc-status-txt">ICE DEPTH: 2.3m · DIELECTRIC K: 2.95</span>
+        </div>
+        <div class="dc-arrow">↗</div>
+        <div class="dc-bg">03</div>
+      </a>
+
+      <!-- ROVER -->
+      <a class="dash-card c-rover" href="rover.html">
+        <div class="dc-num">MODULE // 04</div>
+        <span class="dc-icon">🤖</span>
+        <div class="dc-title">Rover AI Pathfinder</div>
+        <div class="dc-desc">Live A* search algorithm execution. Deep Q-Network (DQN) reinforcement learning. Energy-optimized traverse waypoints.</div>
+        <span class="dc-tag">ROVER AI</span>
+        <div class="dc-status">
+          <div class="dc-dot"></div>
+          <span class="dc-status-txt">A* + DRL · COMPUTING OPTIMAL TRAVERSE</span>
+        </div>
+        <div class="dc-arrow">↗</div>
+        <div class="dc-bg">04</div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- TECH STACK MARQUEE -->
+  <div class="tech-strip">
+    <div class="tech-track">
+      <span class="tech-item"><span class="tech-dot"></span>PyTorch</span>
+      <span class="tech-item"><span class="tech-dot"></span>XGBoost</span>
+      <span class="tech-item"><span class="tech-dot"></span>ID-GAN</span>
+      <span class="tech-item"><span class="tech-dot"></span>Zero-DCE</span>
+      <span class="tech-item"><span class="tech-dot"></span>Three.js</span>
+      <span class="tech-item"><span class="tech-dot"></span>NetworkX</span>
+      <span class="tech-item"><span class="tech-dot"></span>SciPy</span>
+      <span class="tech-item"><span class="tech-dot"></span>Rasterio</span>
+      <span class="tech-item"><span class="tech-dot"></span>GDAL</span>
+      <span class="tech-item"><span class="tech-dot"></span>OpenCV</span>
+      <span class="tech-item"><span class="tech-dot"></span>Stable Baselines3</span>
+      <span class="tech-item"><span class="tech-dot"></span>DFSAR L/S-band</span>
+      <span class="tech-item"><span class="tech-dot"></span>OHRC DEM</span>
+      <span class="tech-item"><span class="tech-dot"></span>NASA LEND</span>
+      <!-- duplicate for seamless loop -->
+      <span class="tech-item"><span class="tech-dot"></span>PyTorch</span>
+      <span class="tech-item"><span class="tech-dot"></span>XGBoost</span>
+      <span class="tech-item"><span class="tech-dot"></span>ID-GAN</span>
+      <span class="tech-item"><span class="tech-dot"></span>Zero-DCE</span>
+      <span class="tech-item"><span class="tech-dot"></span>Three.js</span>
+      <span class="tech-item"><span class="tech-dot"></span>NetworkX</span>
+      <span class="tech-item"><span class="tech-dot"></span>SciPy</span>
+      <span class="tech-item"><span class="tech-dot"></span>Rasterio</span>
+      <span class="tech-item"><span class="tech-dot"></span>GDAL</span>
+      <span class="tech-item"><span class="tech-dot"></span>OpenCV</span>
+      <span class="tech-item"><span class="tech-dot"></span>Stable Baselines3</span>
+      <span class="tech-item"><span class="tech-dot"></span>DFSAR L/S-band</span>
+      <span class="tech-item"><span class="tech-dot"></span>OHRC DEM</span>
+      <span class="tech-item"><span class="tech-dot"></span>NASA LEND</span>
+    </div>
+  </div>
+
+  <footer>
+    <div class="f-logo">BAH 2026</div>
+    <div class="f-copy">CHALLENGE 08 // CHANDRAYAAN-2 // LUNAR ICE DETECTION</div>
+    <div class="f-isro">ISRO × HACK2SKILL</div>
+  </footer>
+
+  <!-- LIBRARIES -->
+  <script src="libs/three.min.js"></script>
+  <script src="libs/OrbitControls.js"></script>
+  <script src="assets/moon_b64.js"></script>
+  
+  <!-- APP LOGIC -->
+  <script src="app.js"></script>
+
+</body>
+</html>

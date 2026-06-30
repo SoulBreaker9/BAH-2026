@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BAH 2026 — Terrain & Subsurface Analysis</title>
+  <meta name="description" content="Chandrayaan-2 OHRC terrain hazard mapping and subsurface ice volume quantification using dielectric inversion models.">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="loader">
+    <div class="l-logo">BAH 2026 — INITIALIZING</div>
+    <div class="l-bar-w"><div class="l-bar" id="lbar"></div></div>
+    <div class="l-txt" id="ltxt">LOADING TERRAIN MODELS...</div>
+  </div>
+
+  <div id="cur"></div>
+  <div id="cur-ring"></div>
+
+  <canvas id="moonCanvas"></canvas>
+  <div id="scan"></div>
+  <div id="vig"></div>
+
+  <div class="hud hud-tl">
+    <span>BAH-2026 // CHL-08</span>
+    <span>OHRC DEM ANALYSIS</span>
+    <span class="live">● TERRAIN ACTIVE</span>
+  </div>
+  <div class="hud hud-tr">
+    <span>LAT: 87.5°S</span>
+    <span>LON: 093.2°E</span>
+    <span>PSR: FAUSTINI</span>
+  </div>
+  <div class="hud hud-bl">
+    <span>MAX SLOPE &lt; 10° // ICE DEPTH: 2.3m</span>
+    <span>TERRAIN SCAN: ACTIVE</span>
+  </div>
+  <div class="hud hud-br">
+    <span id="mtime">T+00:00:00</span>
+    <span>MISSION ELAPSED</span>
+  </div>
+
+  <nav>
+    <div class="nav-logo">BAH <b>2026</b></div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="radar.html">Radar</a></li>
+      <li><a href="fusion.html">Fusion</a></li>
+      <li><a href="terrain.html" style="color:var(--ice);">Terrain</a></li>
+      <li><a href="rover.html">Rover AI</a></li>
+    </ul>
+    <button class="nav-btn">View Report</button>
+  </nav>
+
+  <div style="padding-top: 120px;"></div>
+
+  <!-- SUBSURFACE ICE -->
+  <section class="sec split-sec" id="subsurface-sec">
+    <div class="split-content">
+      <div class="sec-label">Subsurface Estimation</div>
+      <h2 class="sec-h2">Ice Volume<br/><em>Quantification</em></h2>
+      <p class="c-desc">Using radar penetration depth models and dielectric constant inversion, we estimate the total volumetric mass of water-ice trapped in the regolith within the top ~5 metres of the lunar surface.</p>
+      
+      <div class="r-stats">
+        <div class="r-metric m-dep">
+          <div class="r-lbl">ESTIMATED ICE DEPTH</div>
+          <div class="r-val">5.0m</div>
+          <div class="r-bar"><div class="r-fill" id="rf4" style="width: 100%;"></div></div>
+          <div class="r-tag">BELOW REGOLITH</div>
+        </div>
+        <div class="r-metric m-cpr">
+          <div class="r-lbl">DIELECTRIC CONSTANT (K)</div>
+          <div class="r-val">2.95</div>
+          <div class="r-bar"><div class="r-fill" id="rf5"></div></div>
+          <div class="r-tag">ICE MIXTURE</div>
+        </div>
+      </div>
+      
+      <ul class="algo-list">
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(79,195,247,.1); border-color:var(--ice); color:var(--ice)">V</span>
+          <div>
+            <div class="ali-t">Volumetric Scattering</div>
+            <div class="ali-d">Coherent backscatter opposition effect reveals deep ice lenses within the regolith layer.</div>
+          </div>
+        </li>
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(255,215,0,.1); border-color:var(--gold); color:var(--gold)">M</span>
+          <div>
+            <div class="ali-t">Dielectric Inversion</div>
+            <div class="ali-d">Extracting regolith vs ice permittivity ratios to calculate total ice mass in metric tons.</div>
+          </div>
+        </li>
+        <li class="algo-li">
+          <span class="ali-n" style="background:rgba(255,107,53,.1); border-color:var(--isro); color:var(--isro)">D</span>
+          <div>
+            <div class="ali-t">DL Image Purification</div>
+            <div class="ali-d">Zero-DCE neural net illuminates OHRC optical imagery. ID-GAN despeckling cleans DFSAR radar for accurate slope computation.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="split-visual">
+      <div class="vis-overlay">
+        <span class="vis-tag v-i">CROSS-SECTION</span>
+        <span class="vis-tag v-r">RADAR PULSE</span>
+      </div>
+      <img src="assets/final_deep_ice_mask_1.png" class="vis-canvas" alt="Subsurface Deep Ice Mask" style="object-fit: cover; opacity: 0.9;" />
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- LUNAR TERRAIN MAP -->
+  <section class="sec split-sec rev" id="lunar-map">
+    <div class="split-visual">
+      <div class="vis-overlay">
+        <span class="vis-tag v-r">TERRAIN MAP</span>
+        <span class="vis-tag v-i">HAZARD HEATMAP</span>
+      </div>
+      <img src="assets/final_hazard_mask_1.png" class="vis-canvas" alt="Terrain Hazard Mask" style="object-fit: cover; opacity: 0.9;" />
+    </div>
+
+    <div class="split-content">
+      <div class="sec-label">Landing & Traversal</div>
+      <h2 class="sec-h2">Hazard<br/><em>Heatmap</em></h2>
+      <p class="c-desc">Generated from the OHRC Digital Elevation Model (DEM). A cost map flags steep crater walls, boulders, and persistent shadow zones to guide the rover away from danger.</p>
+      
+      <ul class="algo-list">
+        <li class="algo-li">
+          <span class="ali-n">01</span>
+          <div>
+            <div class="ali-t">Landing Zone Safety</div>
+            <div class="ali-d">Slope &lt; 10°, continuous solar illumination, low boulder density.</div>
+          </div>
+        </li>
+        <li class="algo-li">
+          <span class="ali-n">02</span>
+          <div>
+            <div class="ali-t">Sobel Gradient Operator</div>
+            <div class="ali-d">SciPy Sobel filter computes terrain slope gradients from the DEM. Slopes > 10° are flagged as impassable.</div>
+          </div>
+        </li>
+        <li class="algo-li">
+          <span class="ali-n">03</span>
+          <div>
+            <div class="ali-t">Normalized Cost Map</div>
+            <div class="ali-d">Values from 0 (perfectly safe) to ∞ (impassable wall). Used as edge weights in the A* pathfinder.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <div class="f-logo">BAH 2026</div>
+    <div class="f-copy">CHALLENGE 08 // CHANDRAYAAN-2 // LUNAR ICE DETECTION</div>
+    <div class="f-isro">ISRO × HACK2SKILL</div>
+  </footer>
+
+  <script src="libs/three.min.js"></script>
+  <script src="libs/OrbitControls.js"></script>
+  <script src="assets/moon_b64.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

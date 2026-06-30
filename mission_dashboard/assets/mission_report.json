@@ -1,0 +1,17 @@
+{
+    "landing_site_e": -144505.77,
+    "landing_site_n": 69408.83,
+    "landing_site_lat": "87.5°S",
+    "landing_site_lon": "093.2°E",
+    "traverse_distance_m": 1545,
+    "total_ice_volume_m3": 3201402.13,
+    "deep_ice_volume_m3": 1823901.00,
+    "ice_depth_m": 5.0,
+    "dielectric_constant_k": 2.95,
+    "cpr_threshold": 1.0,
+    "dop_threshold": 0.13,
+    "hazard_pixels_avoided": 69468,
+    "ice_pixels_detected": 99811,
+    "ice_probability": 99.4,
+    "crater_target": "Faustini PSR"
+}

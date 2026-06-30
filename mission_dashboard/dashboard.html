@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BAH 2026 — Real-Time Monitoring Dashboard</title>
+  <meta name="description" content="Live mission monitoring dashboard for Chandrayaan-2 lunar ice detection. Real-time CPR, DOP, temperature, and SHAP analysis.">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── DASHBOARD LAYOUT ── */
+    .db-container {
+      position: relative; z-index: 5;
+      display: grid;
+      grid-template-columns: 280px 1fr 320px;
+      gap: 20px;
+      padding: 100px 24px 40px;
+      min-height: 100vh;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1200px) {
+      .db-container {
+        grid-template-columns: 1fr;
+        padding: 100px 16px 40px;
+      }
+    }
+
+    /* ── LEFT PANEL — METRIC CARDS ── */
+    .db-left {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .metric-card {
+      background: rgba(6, 13, 26, 0.75);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(.4,0,.2,1);
+    }
+    .metric-card::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 0 2px 2px 0;
+      transition: opacity 0.3s;
+    }
+    .metric-card:hover {
+      border-color: rgba(255,255,255,0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    }
+
+    .mc-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 4px;
+    }
+    .mc-title {
+      font-family: var(--font-p); font-size: 14px; font-weight: 600;
+      color: #fff; letter-spacing: 0.02em;
+    }
+    .mc-value {
+      font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+      opacity: 0.5;
+    }
+    .mc-unit {
+      font-family: var(--font-mono); font-size: 11px;
+      color: rgba(255,255,255,0.35); margin-top: 2px;
+    }
+
+    .mc-chart {
+      width: 100%; height: 60px;
+      margin-top: 8px;
+    }
+
+    /* Card accent colors */
+    .mc-cpr { --mc-color: #4FC3F7; }
+    .mc-cpr::before { background: #4FC3F7; }
+    .mc-cpr .mc-value { color: #4FC3F7; }
+    .mc-cpr:hover { border-color: rgba(79,195,247,0.25); box-shadow: 0 8px 40px rgba(79,195,247,0.08); }
+
+    .mc-dop { --mc-color: #a78bfa; }
+    .mc-dop::before { background: #a78bfa; }
+    .mc-dop .mc-value { color: #a78bfa; }
+    .mc-dop:hover { border-color: rgba(167,139,250,0.25); box-shadow: 0 8px 40px rgba(167,139,250,0.08); }
+
+    .mc-temp { --mc-color: #FFD700; }
+    .mc-temp::before { background: #FFD700; }
+    .mc-temp .mc-value { color: #FFD700; }
+    .mc-temp:hover { border-color: rgba(255,215,0,0.25); box-shadow: 0 8px 40px rgba(255,215,0,0.08); }
+
+    .mc-vel { --mc-color: #00FF88; }
+    .mc-vel::before { background: #00FF88; }
+    .mc-vel .mc-value { color: #00FF88; }
+    .mc-vel:hover { border-color: rgba(0,255,136,0.25); box-shadow: 0 8px 40px rgba(0,255,136,0.08); }
+
+    /* ── CENTER PANEL ── */
+    .db-center {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Alert Banner */
+    .alert-banner {
+      background: linear-gradient(135deg, rgba(255,51,102,0.12), rgba(255,107,53,0.08));
+      border: 1px solid rgba(255,51,102,0.35);
+      border-radius: 14px;
+      padding: 20px 28px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      animation: alertPulse 3s ease-in-out infinite;
+    }
+    .alert-banner::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(255,51,102,0.06), transparent 70%);
+      animation: alertGlow 3s ease-in-out infinite;
+    }
+    @keyframes alertPulse {
+      0%, 100% { border-color: rgba(255,51,102,0.35); }
+      50% { border-color: rgba(255,51,102,0.6); }
+    }
+    @keyframes alertGlow {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    .alert-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px;
+      background: rgba(255,51,102,0.15);
+      border: 1px solid rgba(255,51,102,0.4);
+      border-radius: 8px;
+      font-size: 18px;
+      margin-right: 12px;
+      vertical-align: middle;
+    }
+    .alert-text {
+      font-family: var(--font-h); font-size: clamp(22px, 3vw, 32px);
+      font-weight: 900; letter-spacing: 0.12em;
+      background: linear-gradient(90deg, #FF3366, #FF6B35, #FFD700);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      vertical-align: middle;
+      text-transform: uppercase;
+      position: relative; z-index: 2;
+    }
+
+    /* SHAP Cards */
+    .shap-card {
+      background: rgba(6, 13, 26, 0.75);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 24px 28px;
+      transition: all 0.4s;
+    }
+    .shap-card:hover {
+      border-color: rgba(255,255,255,0.1);
+    }
+    .shap-title {
+      font-family: var(--font-h); font-size: 14px; font-weight: 700;
+      color: #fff; letter-spacing: 0.08em; text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+
+    .shap-row {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 14px;
+    }
+    .shap-row:last-child { margin-bottom: 0; }
+
+    .shap-label {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      color: rgba(255,255,255,0.6); white-space: nowrap;
+      min-width: 130px; text-align: right;
+    }
+    .shap-bar-wrap {
+      flex: 1; height: 22px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 4px; overflow: hidden;
+      position: relative;
+    }
+    .shap-bar {
+      height: 100%; border-radius: 4px;
+      transition: width 1.5s cubic-bezier(.22,1,.36,1);
+      position: relative;
+    }
+    .shap-bar::after {
+      content: '';
+      position: absolute; right: 0; top: 0; bottom: 0; width: 2px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 1px;
+    }
+
+    /* Timeline chart */
+    .timeline-chart-card {
+      background: rgba(6, 13, 26, 0.75);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 24px 28px;
+    }
+    .tc-canvas {
+      width: 100%; height: 180px;
+      margin-top: 12px;
+    }
+    .tc-time-labels {
+      display: flex; justify-content: space-between;
+      margin-top: 8px;
+    }
+    .tc-time-labels span {
+      font-family: var(--font-mono); font-size: 10px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* ── RIGHT PANEL ── */
+    .db-right {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .settings-card {
+      background: rgba(6, 13, 26, 0.75);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 24px 28px;
+      transition: all 0.4s;
+    }
+    .settings-card:hover {
+      border-color: rgba(255,255,255,0.1);
+    }
+    .sc-title {
+      font-family: var(--font-h); font-size: 14px; font-weight: 700;
+      color: #fff; letter-spacing: 0.08em; text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+
+    .sc-field {
+      margin-bottom: 18px;
+    }
+    .sc-field:last-child { margin-bottom: 0; }
+    .sc-label {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      color: rgba(255,255,255,0.5); letter-spacing: 0.06em;
+      margin-bottom: 8px; display: block;
+    }
+    .sc-input {
+      width: 100%; padding: 10px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      color: rgba(255,255,255,0.5);
+      font-family: var(--font-mono); font-size: 12px;
+      transition: all 0.3s;
+      outline: none;
+    }
+    .sc-input:focus {
+      border-color: rgba(0,255,136,0.4);
+      background: rgba(0,255,136,0.03);
+      color: #fff;
+    }
+    .sc-input::placeholder {
+      color: rgba(255,255,255,0.25);
+    }
+
+    /* Toggle Switch */
+    .sc-toggle-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .sc-toggle-label {
+      font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+      color: rgba(255,255,255,0.7);
+    }
+    .toggle {
+      position: relative; width: 44px; height: 24px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .toggle.active {
+      background: rgba(79,195,247,0.3);
+      border-color: rgba(79,195,247,0.5);
+    }
+    .toggle-knob {
+      position: absolute; top: 2px; left: 2px;
+      width: 18px; height: 18px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 50%;
+      transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    }
+    .toggle.active .toggle-knob {
+      left: 22px;
+      background: #4FC3F7;
+      box-shadow: 0 0 12px rgba(79,195,247,0.5);
+    }
+
+    .sc-btn {
+      width: 100%;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: rgba(255,255,255,0.7);
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 8px;
+    }
+    .sc-btn:hover {
+      background: rgba(0,255,136,0.08);
+      border-color: rgba(0,255,136,0.3);
+      color: var(--radar);
+      box-shadow: 0 0 20px rgba(0,255,136,0.1);
+    }
+
+    /* ── MISSION STATUS CARD ── */
+    .status-card {
+      background: rgba(6, 13, 26, 0.75);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 24px 28px;
+    }
+    .status-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .status-item:last-child { border-bottom: none; }
+    .si-label {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      color: rgba(255,255,255,0.5);
+    }
+    .si-value {
+      font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+    }
+    .si-badge {
+      font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+      letter-spacing: 0.1em; padding: 4px 10px;
+      border-radius: 6px; text-transform: uppercase;
+    }
+    .si-badge.online {
+      background: rgba(0,255,136,0.1); color: #00FF88;
+      border: 1px solid rgba(0,255,136,0.25);
+    }
+    .si-badge.warning {
+      background: rgba(255,215,0,0.1); color: #FFD700;
+      border: 1px solid rgba(255,215,0,0.25);
+    }
+    .si-badge.critical {
+      background: rgba(255,51,102,0.1); color: #FF3366;
+      border: 1px solid rgba(255,51,102,0.25);
+    }
+
+    /* ── LIVE INDICATOR ── */
+    .db-live-bar {
+      position: relative; z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; padding: 12px;
+      margin-top: -20px;
+    }
+    .db-live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #00FF88;
+      box-shadow: 0 0 8px rgba(0,255,136,0.5);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .db-live-text {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.15em; color: rgba(0,255,136,0.6);
+    }
+    .db-live-time {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* ── MINI SPARKLINE (SVG approach for perf) ── */
+    .sparkline-svg {
+      width: 100%; height: 60px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOADER -->
+  <div id="loader">
+    <div class="l-logo">BAH 2026 — INITIALIZING</div>
+    <div class="l-bar-w"><div class="l-bar" id="lbar"></div></div>
+    <div class="l-txt" id="ltxt">BOOTING MONITORING SYSTEMS...</div>
+  </div>
+
+  <!-- CURSOR -->
+  <div id="cur"></div>
+  <div id="cur-ring"></div>
+
+  <!-- WEBGL BACKGROUND -->
+  <canvas id="moonCanvas"></canvas>
+  <div id="scan"></div>
+  <div id="vig"></div>
+
+  <!-- HUD CORNERS -->
+  <div class="hud hud-tl">
+    <span>BAH-2026 // CHL-08</span>
+    <span>MONITORING DASHBOARD</span>
+    <span class="live">● LIVE TELEMETRY</span>
+  </div>
+  <div class="hud hud-tr">
+    <span>LAT: 87.5°S</span>
+    <span>LON: 093.2°E</span>
+    <span>PSR: FAUSTINI</span>
+  </div>
+  <div class="hud hud-bl">
+    <span>CPR &gt; 1.0 // DOP &lt; 0.13</span>
+    <span>ICE DETECTION: ACTIVE</span>
+  </div>
+  <div class="hud hud-br">
+    <span id="mtime">T+00:00:00</span>
+    <span>MISSION ELAPSED</span>
+  </div>
+
+  <!-- NAVIGATION -->
+  <nav>
+    <div class="nav-logo">BAH <b>2026</b></div>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="dashboard.html" style="color:var(--green);">Dashboard</a></li>
+      <li><a href="radar.html">Radar</a></li>
+      <li><a href="fusion.html">Fusion</a></li>
+      <li><a href="terrain.html">Terrain</a></li>
+      <li><a href="rover.html">Rover AI</a></li>
+    </ul>
+    <button class="nav-btn">View Report</button>
+  </nav>
+
+  <!-- LIVE BAR -->
+  <div class="db-live-bar" style="padding-top: 80px;">
+    <div class="db-live-dot"></div>
+    <span class="db-live-text">LIVE MONITORING — FAUSTINI CRATER PSR</span>
+    <span class="db-live-time" id="db-clock">00:00:00</span>
+  </div>
+
+  <!-- MAIN DASHBOARD GRID -->
+  <div class="db-container">
+
+    <!-- ═══ LEFT COLUMN — REAL-TIME METRICS ═══ -->
+    <div class="db-left">
+
+      <!-- CPR -->
+      <div class="metric-card mc-cpr" id="mc-cpr">
+        <div class="mc-header">
+          <div>
+            <div class="mc-title">CPR Value</div>
+            <div class="mc-unit">(Circular Polarization Ratio)</div>
+          </div>
+          <div class="mc-value" id="cpr-val">1.24</div>
+        </div>
+        <canvas class="mc-chart" id="chart-cpr"></canvas>
+      </div>
+
+      <!-- DOP -->
+      <div class="metric-card mc-dop" id="mc-dop">
+        <div class="mc-header">
+          <div>
+            <div class="mc-title">DOP Score</div>
+            <div class="mc-unit">(Degree of Polarization)</div>
+          </div>
+          <div class="mc-value" id="dop-val">0.09</div>
+        </div>
+        <canvas class="mc-chart" id="chart-dop"></canvas>
+      </div>
+
+      <!-- Temperature -->
+      <div class="metric-card mc-temp" id="mc-temp">
+        <div class="mc-header">
+          <div>
+            <div class="mc-title">Surface Temp</div>
+            <div class="mc-unit">Kelvin (PSR Zone)</div>
+          </div>
+          <div class="mc-value" id="temp-val">40 K</div>
+        </div>
+        <canvas class="mc-chart" id="chart-temp"></canvas>
+      </div>
+
+      <!-- Ice Probability -->
+      <div class="metric-card mc-vel" id="mc-vel">
+        <div class="mc-header">
+          <div>
+            <div class="mc-title">Ice Probability</div>
+            <div class="mc-unit">% (Fused Multi-Sensor)</div>
+          </div>
+          <div class="mc-value" id="prob-val">99.4%</div>
+        </div>
+        <canvas class="mc-chart" id="chart-prob"></canvas>
+      </div>
+
+    </div>
+
+    <!-- ═══ CENTER COLUMN — ALERTS & SHAP ═══ -->
+    <div class="db-center">
+
+      <!-- ALERT BANNER -->
+      <div class="alert-banner" id="alert-banner">
+        <span class="alert-icon">⚠️</span>
+        <span class="alert-text">ICE DEPOSIT CONFIRMED</span>
+      </div>
+
+      <!-- SHAP Analysis 1 -->
+      <div class="shap-card">
+        <div class="shap-title">SHAP Feature Importance — CPR Model</div>
+
+        <div class="shap-row">
+          <span class="shap-label">CPR at t-1</span>
+          <div class="shap-bar-wrap">
+            <div class="shap-bar" style="width:0%; background: linear-gradient(90deg, #1565C0, #42A5F5);" data-target="85"></div>
+          </div>
+        </div>
+        <div class="shap-row">
+          <span class="shap-label">Backscatter Spike</span>
+          <div class="shap-bar-wrap">
+            <div class="shap-bar" style="width:0%; background: linear-gradient(90deg, #6A1B9A, #AB47BC);" data-target="70"></div>
+          </div>
+        </div>
+        <div class="shap-row">
+          <span class="shap-label">DOP Anomaly</span>
+          <div class="shap-bar-wrap">
+            <div class="shap-bar" style="width:0%; background: linear-gradient(90deg, #6A1B9A, #7E57C2);" data-target="55"></div>
+          </div>
+        </div>
+        <div class="shap-row">
+          <span class="shap-label">Surface Albedo</span>
+          <div class="shap-bar-wrap">
+            <div class="shap-bar" style="width:0%; background: linear-gradient(90deg, #00897B, #4DB6AC);" data-target="42"></div>
+          </div>
+        </div>
+        <div class="shap-row">
+          <span class="shap-label">Thermal Gradient</span>
+          <div class="shap-bar-wrap">
+            <div class="shap-bar" style="width:0%; background: linear-gradient(90deg, #E65100, #FFB74D);" data-target="35"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SHAP Analysis 2 -->
+      <div class="shap-card">
+        <div class="shap-title">SHAP Feature Importance — Fusion Model</div>
+
+        <div class="shap-row">
+          <span class="shap-label">DFSAR L-Band</span>
+          <div class="shap-bar-wrap">
+            <div class="shap-bar" style="width:0%; background: linear-gradient(90deg, #1565C0, #42A5F5);" data-target="90"></div>
+          </div>
+        </div>
+        <div class="shap-row">
+          <span class="shap-label">DFSAR S-Band</span>
+          <div class="shap-bar-wrap">
+            <div class="shap-bar" style="width:0%; background: linear-gradient(90deg, #6A1B9A, #AB47BC);" data-target="75"></div>
+          </div>
+        </div>
+        <div class="shap-row">
+          <span class="shap-label">IIRS Hydration</span>
+          <div class="shap-bar-wrap">
+            <div class="shap-bar" style="width:0%; background: linear-gradient(90deg, #6A1B9A, #7E57C2);" data-target="60"></div>
+          </div>
+        </div>
+        <div class="shap-row">
+          <span class="shap-label">OHRC Albedo</span>
+          <div class="shap-bar-wrap">
+            <div class="shap-bar" style="width:0%; background: linear-gradient(90deg, #00897B, #4DB6AC);" data-target="48"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Chart -->
+      <div class="timeline-chart-card">
+        <div class="shap-title">Detection Confidence Timeline</div>
+        <canvas class="tc-canvas" id="timeline-canvas"></canvas>
+        <div class="tc-time-labels">
+          <span>T-120</span>
+          <span>T-90</span>
+          <span>T-60</span>
+          <span>T-30</span>
+          <span>NOW</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ RIGHT COLUMN — SETTINGS & STATUS ═══ -->
+    <div class="db-right">
+
+      <!-- Alert Settings -->
+      <div class="settings-card">
+        <div class="sc-title">Alert Settings</div>
+
+        <div class="sc-field">
+          <label class="sc-label">Telegram Bot Token</label>
+          <input class="sc-input" type="text" placeholder="Telegram" id="tg-token" />
+        </div>
+
+        <div class="sc-field">
+          <label class="sc-label">Chat ID</label>
+          <input class="sc-input" type="text" placeholder="Chat ID" id="tg-chat" />
+        </div>
+
+        <div class="sc-toggle-row">
+          <span class="sc-toggle-label">Email</span>
+          <div class="toggle active" id="toggle-email" onclick="this.classList.toggle('active')">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+
+        <button class="sc-btn" id="btn-test-alert">SEND TEST ALERT</button>
+      </div>
+
+      <!-- Alert Notifications -->
+      <div class="settings-card">
+        <div class="sc-title">Alert Notifications</div>
+
+        <div class="sc-toggle-row">
+          <span class="sc-toggle-label">Email</span>
+          <div class="toggle" id="toggle-notif-email" onclick="this.classList.toggle('active')">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+
+        <div class="sc-toggle-row">
+          <span class="sc-toggle-label">Push Notification</span>
+          <div class="toggle active" id="toggle-notif-push" onclick="this.classList.toggle('active')">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+
+        <div class="sc-toggle-row">
+          <span class="sc-toggle-label">Sound Alert</span>
+          <div class="toggle active" id="toggle-notif-sound" onclick="this.classList.toggle('active')">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mission Status -->
+      <div class="status-card">
+        <div class="sc-title">Mission Status</div>
+
+        <div class="status-item">
+          <span class="si-label">DFSAR Link</span>
+          <span class="si-badge online">ONLINE</span>
+        </div>
+        <div class="status-item">
+          <span class="si-label">CPR Engine</span>
+          <span class="si-badge online">ACTIVE</span>
+        </div>
+        <div class="status-item">
+          <span class="si-label">Ice Alert</span>
+          <span class="si-badge critical">TRIGGERED</span>
+        </div>
+        <div class="status-item">
+          <span class="si-label">Fusion Model</span>
+          <span class="si-badge online">RUNNING</span>
+        </div>
+        <div class="status-item">
+          <span class="si-label">DRL Agent</span>
+          <span class="si-badge warning">STANDBY</span>
+        </div>
+        <div class="status-item">
+          <span class="si-label">Rover Link</span>
+          <span class="si-badge online">READY</span>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="settings-card">
+        <div class="sc-title">Quick Actions</div>
+        <button class="sc-btn" onclick="window.location.href='radar.html'">OPEN RADAR VIEW</button>
+        <button class="sc-btn" onclick="window.location.href='terrain.html'" style="margin-top:10px;">TERRAIN ANALYSIS</button>
+        <button class="sc-btn" onclick="window.location.href='rover.html'" style="margin-top:10px;">LAUNCH PATHFINDER</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="f-logo">BAH 2026</div>
+    <div class="f-copy">CHALLENGE 08 // CHANDRAYAAN-2 // LUNAR ICE DETECTION</div>
+    <div class="f-isro">ISRO × HACK2SKILL</div>
+  </footer>
+
+  <!-- LIBRARIES -->
+  <script src="libs/three.min.js"></script>
+  <script src="libs/OrbitControls.js"></script>
+  <script src="assets/moon_b64.js"></script>
+
+  <!-- APP LOGIC (shared modules: cursor, loader, moon scene, clock) -->
+  <script src="app.js"></script>
+
+  <!-- DASHBOARD-SPECIFIC LOGIC -->
+  <script>
+    // =====================================================================
+    // DASHBOARD SCRIPTS
+    // =====================================================================
+
+    // --- Live Clock ---
+    setInterval(() => {
+      const now = new Date();
+      const el = document.getElementById('db-clock');
+      if (el) el.textContent = now.toTimeString().split(' ')[0];
+    }, 1000);
+
+    // --- Sparkline Chart System ---
+    class SparklineChart {
+      constructor(canvasId, color, minVal, maxVal, baseVal, variance) {
+        this.canvas = document.getElementById(canvasId);
+        if (!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        this.color = color;
+        this.minVal = minVal;
+        this.maxVal = maxVal;
+        this.baseVal = baseVal;
+        this.variance = variance;
+        this.data = [];
+        this.maxPoints = 60;
+
+        // Initialize with some history
+        for (let i = 0; i < this.maxPoints; i++) {
+          this.data.push(this.baseVal + (Math.random() - 0.5) * this.variance);
+        }
+
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+      }
+
+      resize() {
+        if (!this.canvas) return;
+        const rect = this.canvas.getBoundingClientRect();
+        this.canvas.width = rect.width * (window.devicePixelRatio || 1);
+        this.canvas.height = rect.height * (window.devicePixelRatio || 1);
+        this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+        this.w = rect.width;
+        this.h = rect.height;
+      }
+
+      addPoint() {
+        const last = this.data[this.data.length - 1];
+        let newVal = last + (Math.random() - 0.5) * this.variance * 0.3;
+        newVal = Math.max(this.minVal, Math.min(this.maxVal, newVal));
+        this.data.push(newVal);
+        if (this.data.length > this.maxPoints) this.data.shift();
+        return newVal;
+      }
+
+      draw() {
+        if (!this.ctx) return;
+        const ctx = this.ctx;
+        const w = this.w, h = this.h;
+
+        ctx.clearRect(0, 0, w, h);
+
+        if (this.data.length < 2) return;
+
+        const range = this.maxVal - this.minVal;
+        const stepX = w / (this.maxPoints - 1);
+
+        // Gradient fill
+        const gradient = ctx.createLinearGradient(0, 0, 0, h);
+        gradient.addColorStop(0, this.color + '30');
+        gradient.addColorStop(1, this.color + '00');
+
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+
+        for (let i = 0; i < this.data.length; i++) {
+          const x = i * stepX;
+          const y = h - ((this.data[i] - this.minVal) / range) * h * 0.85 - h * 0.05;
+          if (i === 0) ctx.lineTo(x, y);
+          else {
+            // Smooth curve
+            const prevX = (i - 1) * stepX;
+            const prevY = h - ((this.data[i - 1] - this.minVal) / range) * h * 0.85 - h * 0.05;
+            const cpx = (prevX + x) / 2;
+            ctx.bezierCurveTo(cpx, prevY, cpx, y, x, y);
+          }
+        }
+
+        ctx.lineTo((this.data.length - 1) * stepX, h);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Line
+        ctx.beginPath();
+        for (let i = 0; i < this.data.length; i++) {
+          const x = i * stepX;
+          const y = h - ((this.data[i] - this.minVal) / range) * h * 0.85 - h * 0.05;
+          if (i === 0) ctx.moveTo(x, y);
+          else {
+            const prevX = (i - 1) * stepX;
+            const prevY = h - ((this.data[i - 1] - this.minVal) / range) * h * 0.85 - h * 0.05;
+            const cpx = (prevX + x) / 2;
+            ctx.bezierCurveTo(cpx, prevY, cpx, y, x, y);
+          }
+        }
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Endpoint glow
+        const lastX = (this.data.length - 1) * stepX;
+        const lastY = h - ((this.data[this.data.length - 1] - this.minVal) / range) * h * 0.85 - h * 0.05;
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + '30';
+        ctx.fill();
+      }
+    }
+
+    // Create charts
+    const cprChart = new SparklineChart('chart-cpr', '#4FC3F7', 0.5, 2.0, 1.24, 0.3);
+    const dopChart = new SparklineChart('chart-dop', '#a78bfa', 0.01, 0.25, 0.09, 0.06);
+    const tempChart = new SparklineChart('chart-temp', '#FFD700', 20, 100, 40, 15);
+    const probChart = new SparklineChart('chart-prob', '#00FF88', 85, 100, 99.4, 2);
+
+    // Update loop via API fetch
+    async function fetchTelemetry() {
+      try {
+        const response = await fetch('http://localhost:8000/api/telemetry');
+        if (!response.ok) throw new Error('API Error');
+        const { data } = await response.json();
+        
+        cprChart.data.push(data.cpr_value);
+        if (cprChart.data.length > cprChart.maxPoints) cprChart.data.shift();
+        
+        dopChart.data.push(data.dop_value);
+        if (dopChart.data.length > dopChart.maxPoints) dopChart.data.shift();
+        
+        tempChart.data.push(data.temperature_k);
+        if (tempChart.data.length > tempChart.maxPoints) tempChart.data.shift();
+        
+        probChart.data.push(data.ice_probability);
+        if (probChart.data.length > probChart.maxPoints) probChart.data.shift();
+
+        const cprEl = document.getElementById('cpr-val');
+        const dopEl = document.getElementById('dop-val');
+        const tempEl = document.getElementById('temp-val');
+        const probEl = document.getElementById('prob-val');
+
+        if (cprEl) cprEl.textContent = data.cpr_value.toFixed(2);
+        if (dopEl) dopEl.textContent = data.dop_value.toFixed(3);
+        if (tempEl) tempEl.textContent = Math.round(data.temperature_k) + ' K';
+        if (probEl) probEl.textContent = data.ice_probability.toFixed(1) + '%';
+        
+        // Alert styling based on backend logic
+        const alertBanner = document.getElementById('alert-banner');
+        const alertIcon = document.querySelector('.alert-icon');
+        const alertText = document.querySelector('.alert-text');
+        
+        if (alertBanner && alertIcon && alertText) {
+          if (data.alert_triggered) {
+            alertBanner.style.background = 'linear-gradient(135deg, rgba(255,51,102,0.12), rgba(255,107,53,0.08))';
+            alertBanner.style.borderColor = 'rgba(255,51,102,0.35)';
+            alertIcon.textContent = '⚠️';
+            alertText.textContent = 'ICE DEPOSIT CONFIRMED';
+            alertText.style.background = 'linear-gradient(90deg, #FF3366, #FF6B35, #FFD700)';
+            alertText.style.webkitBackgroundClip = 'text';
+          } else {
+            alertBanner.style.background = 'linear-gradient(135deg, rgba(0,255,136,0.12), rgba(79,195,247,0.08))';
+            alertBanner.style.borderColor = 'rgba(0,255,136,0.35)';
+            alertIcon.textContent = '✅';
+            alertText.textContent = 'MONITORING NOMINAL';
+            alertText.style.background = 'linear-gradient(90deg, #00FF88, #4FC3F7)';
+            alertText.style.webkitBackgroundClip = 'text';
+          }
+        }
+      } catch (err) {
+        // Fallback to internal simulation if API is down
+        const cprVal = cprChart.addPoint();
+        const dopVal = dopChart.addPoint();
+        const tempVal = tempChart.addPoint();
+        const probVal = probChart.addPoint();
+
+        const cprEl = document.getElementById('cpr-val');
+        const dopEl = document.getElementById('dop-val');
+        const tempEl = document.getElementById('temp-val');
+        const probEl = document.getElementById('prob-val');
+
+        if (cprEl) cprEl.textContent = cprVal.toFixed(2);
+        if (dopEl) dopEl.textContent = dopVal.toFixed(3);
+        if (tempEl) tempEl.textContent = Math.round(tempVal) + ' K';
+        if (probEl) probEl.textContent = probVal.toFixed(1) + '%';
+      }
+      
+      cprChart.draw();
+      dopChart.draw();
+      tempChart.draw();
+      probChart.draw();
+    }
+    
+    // Poll API every 1.5s
+    setInterval(fetchTelemetry, 1500);
+
+    // Initial draw
+    setTimeout(() => {
+      cprChart.draw();
+      dopChart.draw();
+      tempChart.draw();
+      probChart.draw();
+    }, 100);
+
+    // --- SHAP Bar Animation ---
+    setTimeout(() => {
+      document.querySelectorAll('.shap-bar[data-target]').forEach((bar, i) => {
+        setTimeout(() => {
+          bar.style.width = bar.dataset.target + '%';
+        }, i * 150);
+      });
+    }, 800);
+
+    // --- Timeline Canvas ---
+    (function initTimeline() {
+      const c = document.getElementById('timeline-canvas');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+
+      function resize() {
+        const rect = c.getBoundingClientRect();
+        c.width = rect.width * (window.devicePixelRatio || 1);
+        c.height = rect.height * (window.devicePixelRatio || 1);
+        ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      // Generate timeline data (3 lines)
+      const lines = [
+        { color: '#4FC3F7', data: [], label: 'CPR' },
+        { color: '#00FF88', data: [], label: 'DOP' },
+        { color: '#FFD700', data: [], label: 'Thermal' }
+      ];
+
+      const pts = 120;
+      for (let l of lines) {
+        for (let i = 0; i < pts; i++) {
+          const base = 0.3 + 0.4 * Math.sin(i * 0.05 + lines.indexOf(l) * 2);
+          l.data.push(base + (Math.random() - 0.5) * 0.15);
+        }
+      }
+
+      let offset = 0;
+
+      function draw() {
+        const rect = c.getBoundingClientRect();
+        const w = rect.width, h = rect.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+          const y = (i / 4) * h;
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+        for (let i = 0; i < 6; i++) {
+          const x = (i / 5) * w;
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        }
+
+        // Lines
+        lines.forEach(line => {
+          ctx.beginPath();
+          const stepX = w / (pts - 1);
+
+          for (let i = 0; i < pts; i++) {
+            const idx = (i + Math.floor(offset)) % pts;
+            const x = i * stepX;
+            const y = h - line.data[idx] * h * 0.8 - h * 0.1;
+
+            if (i === 0) ctx.moveTo(x, y);
+            else {
+              const prevIdx = (i - 1 + Math.floor(offset)) % pts;
+              const prevX = (i - 1) * stepX;
+              const prevY = h - line.data[prevIdx] * h * 0.8 - h * 0.1;
+              const cpx = (prevX + x) / 2;
+              ctx.bezierCurveTo(cpx, prevY, cpx, y, x, y);
+            }
+          }
+
+          ctx.strokeStyle = line.color;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // Endpoint
+          const lastIdx = (pts - 1 + Math.floor(offset)) % pts;
+          const lastY = h - line.data[lastIdx] * h * 0.8 - h * 0.1;
+          ctx.beginPath();
+          ctx.arc(w, lastY, 3, 0, Math.PI * 2);
+          ctx.fillStyle = line.color;
+          ctx.fill();
+        });
+
+        // Add new data points slowly
+        offset += 0.05;
+        if (offset >= pts) offset = 0;
+
+        // Legend
+        lines.forEach((line, i) => {
+          const lx = 12;
+          const ly = 16 + i * 18;
+          ctx.fillStyle = line.color;
+          ctx.fillRect(lx, ly - 5, 12, 3);
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.font = '10px "JetBrains Mono", monospace';
+          ctx.fillText(line.label, lx + 18, ly);
+        });
+
+        requestAnimationFrame(draw);
+      }
+
+      // Start when visible
+      const obs = new IntersectionObserver(e => {
+        if (e[0].isIntersecting) { draw(); obs.disconnect(); }
+      });
+      obs.observe(c);
+    })();
+
+    // --- Test Alert Button ---
+    document.getElementById('btn-test-alert')?.addEventListener('click', function() {
+      const banner = document.getElementById('alert-banner');
+      if (banner) {
+        banner.style.borderColor = 'rgba(0,255,136,0.6)';
+        banner.style.background = 'linear-gradient(135deg, rgba(0,255,136,0.12), rgba(79,195,247,0.08))';
+        setTimeout(() => {
+          banner.style.borderColor = '';
+          banner.style.background = '';
+        }, 2000);
+      }
+      this.textContent = '✓ ALERT SENT';
+      this.style.color = '#00FF88';
+      this.style.borderColor = 'rgba(0,255,136,0.4)';
+      setTimeout(() => {
+        this.textContent = 'SEND TEST ALERT';
+        this.style.color = '';
+        this.style.borderColor = '';
+      }, 2500);
+    });
+
+  </script>
+
+</body>
+</html>
