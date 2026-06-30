@@ -10,7 +10,7 @@
 
 <div align="center">
 
-# 🌑 PROJECT DEEP ICE
+# 🌑 PROJECT SHÏSHỊR 
 
 **ISRO BAH-2026 PS-8 Hackathon Solution**
 *Chandrayaan-2 Subsurface Ice Detection + Rover Pathfinding • Lunar South Pole • Faustini PSR • Doubly Shadowed Craters*
