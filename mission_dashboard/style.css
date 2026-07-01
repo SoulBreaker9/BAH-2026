@@ -216,7 +216,10 @@ footer { padding: 60px 40px; text-align: center; border-top: 1px solid rgba(255,
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.8;
-  color: var(--ice);
+  background: linear-gradient(90deg, #4FC3F7 0%, #E1F5FE 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #E1F5FE;
   margin-bottom: 40px;
 }
 
