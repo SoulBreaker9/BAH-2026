@@ -140,8 +140,8 @@ nav {
 }
 .eyebrow { font-family: var(--font-mono); color: var(--isro); letter-spacing: 4px; font-size: 12px; margin-bottom: 20px; text-transform: uppercase; }
 .hero-h1 { font-family: var(--font-h); font-size: 90px; line-height: 0.9; margin-bottom: 20px; display: flex; flex-direction: column; font-weight: 900; }
-.l1 { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.5); }
-.l2 { color: #fff; text-shadow: 0 0 40px rgba(255,255,255,0.3); }
+.l1 { color: var(--ice); text-shadow: 0 0 20px rgba(79,195,247,0.5); }
+.l2 { color: #fff; text-shadow: 0 0 20px rgba(255,255,255,0.8); }
 .hero-sub { font-family: var(--font-mono); color: rgba(255,255,255,0.6); max-width: 600px; line-height: 1.6; margin-bottom: 40px; }
 
 .badges { display: flex; gap: 12px; margin-bottom: 40px; }
