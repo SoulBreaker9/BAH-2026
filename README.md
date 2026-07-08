@@ -850,8 +850,8 @@ Saves `mission_traverse_map.png` to the project root.
 | **Saud Topiwala** | Optimization & Novelty Research | A\* algorithmic efficiency, cost function design (α/β weight tuning), computational optimization (dynamic windowing to reduce RAM from 16 GB to < 100 MB), novel pathfinding heuristics | A\* implementation in `mission_control.py`, RAM optimization strategy, cost matrix design | -->
 
 
-<div align="center">
 ## Team GJP (Gujarat Janta Party)
+<div align="center">
 
 | Name | Role | LinkedIn |
 |------|------|----------|
